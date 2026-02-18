@@ -25,8 +25,9 @@ For each comment or thread, determine:
    - approval: Approval comments ("LGTM", "looks good")
    - informational: FYI, context, or background information
 
-2. **is_resolved**: Whether the feedback has been addressed. Only evaluate resolution for "suggestion", "nitpick", and "issue" categories. For "question", "approval", and "informational", always set is_resolved to true.
-   - Look at follow-up comments in the thread for evidence of resolution (author saying "fixed", "done", "updated", etc.)
+2. **is_resolved**: Whether the feedback has been addressed. Only evaluate resolution for "suggestion", "nitpick", "issue", and "question" categories. For "approval" and "informational", always set is_resolved to true.
+   - For "suggestion", "nitpick", and "issue": Look at follow-up comments in the thread for evidence of resolution (author saying "fixed", "done", "updated", etc.)
+   - For "question": Look at follow-up comments for evidence that the question has been answered. If the question remains unanswered, set is_resolved to false.
    - If is_resolved_on_github is true, always consider it resolved regardless of comment content.
 
 3. **reason**: Brief explanation of your classification and resolution decision.
