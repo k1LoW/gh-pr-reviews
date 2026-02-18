@@ -14,6 +14,7 @@ type Comment struct {
 	Author     string    `json:"author"`
 	CreatedAt  time.Time `json:"created_at"`
 	URL        string    `json:"url"`
+	DiffHunk   string    `json:"diff_hunk,omitempty"`
 	CommitID   string    `json:"commit_id,omitempty"`
 }
 
@@ -100,6 +101,7 @@ type UnresolvedComment struct {
 	Path      string `json:"path,omitempty"`
 	Line      *int   `json:"line,omitempty"`
 	CommitID  string `json:"commit_id,omitempty"`
+	DiffHunk  string `json:"diff_hunk,omitempty"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	URL       string `json:"url"`
@@ -183,7 +185,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 		}
 
 		// Use the first comment as the representative.
-		var author, body, url, commitID string
+		var author, body, url, commitID, diffHunk string
 		var commentID int64
 		if len(t.Comments) > 0 {
 			author = t.Comments[0].Author
@@ -191,6 +193,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 			url = t.Comments[0].URL
 			commentID = t.Comments[0].DatabaseID
 			commitID = t.Comments[0].CommitID
+			diffHunk = t.Comments[0].DiffHunk
 		}
 
 		results = append(results, UnresolvedComment{
@@ -200,6 +203,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 			Path:      t.Path,
 			Line:      t.Line,
 			CommitID:  commitID,
+			DiffHunk:  diffHunk,
 			Author:    author,
 			Body:      body,
 			URL:       url,

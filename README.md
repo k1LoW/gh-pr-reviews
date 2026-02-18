@@ -24,7 +24,7 @@ $ gh pr-reviews --all
 
 JSON array of review comments with classification and resolution status.
 
-There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, and `commit_id` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying.
+There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, `commit_id`, and `diff_hunk` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying.
 
 ```json
 [
@@ -35,6 +35,7 @@ There are two types: `thread` (inline review thread) and `comment` (PR-level com
     "path": "src/handler.go",
     "line": 42,
     "commit_id": "abc1234def5678",
+    "diff_hunk": "@@ -40,6 +40,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {\n \tif err != nil {\n-\t\tlog.Println(err)\n+\t\treturn err",
     "author": "reviewer",
     "body": "This should use error wrapping",
     "url": "https://github.com/owner/repo/pull/123#discussion_r123456",
