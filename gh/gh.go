@@ -43,6 +43,9 @@ type reviewThreadsQuery struct {
 							Author     struct{ Login string }
 							CreatedAt  time.Time
 							URL        string `graphql:"url"`
+							Commit     struct {
+								Oid string
+							}
 						}
 					} `graphql:"comments(first: 100)"`
 				}
@@ -108,6 +111,7 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 					Author:     c.Author.Login,
 					CreatedAt:  c.CreatedAt,
 					URL:        c.URL,
+					CommitID:   c.Commit.Oid,
 				})
 			}
 			data.Threads = append(data.Threads, thread)
