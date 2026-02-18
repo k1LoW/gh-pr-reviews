@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.5.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.4.0...v0.5.0) - 2026-02-18
+### New Features 🎉
+- fix: evaluate resolution status for question category via Copilot by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/15
+### Other Changes
+- docs: add Claude Code Skill example for triaging PR review comments by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/13
+
 ## [v0.4.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.3.0...v0.4.0) - 2026-02-18
 ### Breaking Changes 🛠
 - feat: add colored Markdown output as default, move JSON to --json flag by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/8
