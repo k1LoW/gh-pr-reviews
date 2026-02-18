@@ -135,13 +135,22 @@ $ gh extension install k1LoW/gh-pr-reviews
 | `--copilot-model` | | Copilot model to use for classification (default: `claude-haiku-4.5`) |
 | `--verbose` | | Verbose output |
 
-## Claude Code Skill Example
+## Agent Skill Example
 
-You can use `gh pr-reviews` as part of a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) custom slash command (Skill). Below is an example skill that triages unresolved review comments by analyzing code context and classifying each comment as Agree / Partially Agree / Disagree.
+You can use `gh pr-reviews` as part of an [Agent Skill](https://agentskills.io/). Below is an example skill that triages unresolved review comments by analyzing code context and classifying each comment as Agree / Partially Agree / Disagree.
 
-Copy the content below into your project's `.claude/skills/triage-pr-reviews/SKILL.md` (or `~/.claude/skills/triage-pr-reviews/SKILL.md` for global use). The directory name becomes the slash command, so this skill is invoked as `/triage-pr-reviews` in Claude Code.
+Copy the content below into `triage-pr-reviews/SKILL.md` in a location recognized by your agent (e.g., `.claude/skills/` for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), `.github/skills/` for [GitHub Copilot Coding Agent](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent), or wherever your agent discovers skills).
 
 ````markdown
+---
+name: triage-pr-reviews
+description: >
+  Triages unresolved PR review comments using gh-pr-reviews.
+  Analyzes code context and classifies each comment as Agree / Partially Agree / Disagree.
+  Use when the user wants to triage, review, or analyze unresolved PR comments.
+compatibility: Requires gh CLI and gh-pr-reviews extension (gh extension install k1LoW/gh-pr-reviews)
+---
+
 # Triage PR Review Comments
 1. Run `gh pr-reviews [arg] --json` to get unresolved review comments as JSON. If no argument is given, use the current branch's PR. Note: this command uses Copilot for classification and may take a while depending on the number of comments — use a longer timeout. Each JSON object contains:
    - `comment_id` (int): REST API comment ID — usable for replying via `gh api`
@@ -181,7 +190,7 @@ Copy the content below into your project's `.claude/skills/triage-pr-reviews/SKI
 - Disagree: n — can be explained or dismissed
 ```
 
-Do NOT write to GitHub (no commenting, resolving, or any mutations). Do NOT commit or push. If code context is unclear, use Grep to verify before making a judgment. Prefer `gh` commands over WebFetch for GitHub data.
+Do NOT write to GitHub (no commenting, resolving, or any mutations). Do NOT commit or push. If code context is unclear, search the codebase to verify before making a judgment. Prefer `gh` commands for GitHub data.
 ````
 
 ## Contributing
