@@ -16,10 +16,11 @@ gh-pr-reviews is a GitHub CLI (`gh`) extension that identifies unresolved review
 
 ## Architecture
 
-The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL API (fetch reviews) → Copilot SDK (classify comments) → JSON output to stdout.
+The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL API (fetch reviews) → Copilot SDK (classify comments) → colored Markdown output to stdout (or JSON with `--json`).
 
 - `main.go` — Entry point, delegates to `cmd.Execute()`
-- `cmd/root.go` — Cobra root command. Resolves PR context by shelling out to `gh pr view`, orchestrates the full pipeline with spinner progress. Flags: `-R`, `-a`, `--copilot-model`, `--verbose`
+- `cmd/root.go` — Cobra root command. Resolves PR context by shelling out to `gh pr view`, orchestrates the full pipeline with spinner progress. Flags: `-R`, `-a`, `--json`, `--copilot-model`, `--verbose`
+- `output/markdown.go` — Colored Markdown-style terminal output using `termenv`. Groups threads by file path, renders PR comments separately. Colors follow GitHub Copilot brand palette and auto-degrade based on terminal capability (`NO_COLOR`, non-TTY)
 - `gh/gh.go` — GitHub GraphQL client using `go-github-client` factory for auth and `shurcooL/githubv4` for queries. Fetches `reviewThreads` (inline, with `databaseId` for REST API compatibility) and `comments` (PR-level) with cursor-based pagination
 - `review/review.go` — Core data types (`Thread`, `Comment`, `Data`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has two types: `thread` (with `thread_id`) and `comment` (without `thread_id`), both with `comment_id` (REST API numeric ID)
 - `review/copilot.go` — `CopilotClassifier` implementation using the Copilot SDK. Sends all PR comments as structured JSON in a single request, receives classification+resolution results. Includes copilot CLI version check (>= 0.0.411 required)
