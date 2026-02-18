@@ -209,6 +209,14 @@ func init() {
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results as JSON")
 	rootCmd.Flags().IntVarP(&widthFlag, "width", "w", 0, "Output width (0 for auto-detect)")
 
+	_ = rootCmd.RegisterFlagCompletionFunc("copilot-model", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		models, err := review.ListCopilotModels(rootCmd.Context())
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		return models, cobra.ShellCompDirectiveNoFileComp
+	})
+
 	// Hide the default completion command.
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
