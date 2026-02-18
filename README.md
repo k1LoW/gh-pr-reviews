@@ -91,14 +91,14 @@ There are two types: `thread` (inline review thread) and `comment` (PR-level com
 | `approval` | Approval comments (LGTM, looks good) |
 | `informational` | FYI, context, or background information |
 
-Only `suggestion`, `nitpick`, and `issue` categories are evaluated for resolution status. The rest are always treated as resolved.
+Only `suggestion`, `nitpick`, `issue`, and `question` categories are evaluated for resolution status. The rest (`approval`, `informational`) are always treated as resolved.
 
 ### Resolution Logic
 
 Resolution status is determined by combining GitHub's native thread resolution state with Copilot-based analysis:
 
 1. **GitHub-resolved threads** — If a review thread is marked as resolved on GitHub (via the "Resolve conversation" button), it is always treated as **resolved**, regardless of Copilot's analysis. PR-level comments have no GitHub resolution state, so this step only applies to inline review threads.
-2. **Copilot analysis** — For threads not resolved on GitHub and for PR-level comments, Copilot classifies the comment category and determines resolution. As part of this analysis, `question`, `approval`, and `informational` categories are always treated as resolved. For `suggestion`, `nitpick`, and `issue` categories, Copilot examines follow-up comments for evidence that the feedback was addressed (e.g., "fixed", "done", "updated").
+2. **Copilot analysis** — For threads not resolved on GitHub and for PR-level comments, Copilot classifies the comment category and determines resolution. As part of this analysis, `approval` and `informational` categories are always treated as resolved. For `suggestion`, `nitpick`, `issue`, and `question` categories, Copilot examines follow-up comments for evidence that the feedback was addressed or the question was answered.
 
 ```mermaid
 flowchart TD
@@ -108,8 +108,8 @@ flowchart TD
     C -->|Yes| R[resolved]
     C -->|No| D[Copilot classifies category & resolution]
     D --> E{Category}
-    E -->|question / approval / informational| R
-    E -->|suggestion / nitpick / issue| F[Copilot determines from conversation context]
+    E -->|approval / informational| R
+    E -->|suggestion / nitpick / issue / question| F[Copilot determines from conversation context]
     F --> R
     F --> U[unresolved]
 ```
