@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.2.0...v0.3.0) - 2026-02-18
+### New Features 🎉
+- feat: add diff_hunk metadata to thread output by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/6
+
 ## [v0.2.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.1.0...v0.2.0) - 2026-02-18
 ### New Features 🎉
 - feat: add path, line, and commit_id metadata to thread output by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/4
