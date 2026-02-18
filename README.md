@@ -22,7 +22,27 @@ $ gh pr-reviews --all
 
 ### Output
 
-JSON array of review comments with classification and resolution status.
+By default, results are displayed in a colored Markdown-style format grouped by file path. Colors follow the GitHub Copilot brand palette and are automatically disabled when output is piped or `NO_COLOR` is set.
+
+```
+## src/handler.go
+
+### suggestion (unresolved) — @reviewer
+L42 | https://github.com/owner/repo/pull/123#discussion_r123456
+This should use error wrapping
+
+## PR Comments
+
+### suggestion (unresolved) — @reviewer
+https://github.com/owner/repo/pull/123#issuecomment-123456
+Overall looks good but please address the error handling
+```
+
+Use `--json` to get machine-readable JSON output:
+
+```bash
+$ gh pr-reviews 123 --json
+```
 
 There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, `commit_id`, and `diff_hunk` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying.
 
@@ -85,6 +105,7 @@ $ gh extension install k1LoW/gh-pr-reviews
 |--------|-------|-------------|
 | `--repo` | `-R` | Select another repository using the `[HOST/]OWNER/REPO` format |
 | `--all` | `-a` | Show all review comments including resolved ones |
+| `--json` | | Output results as JSON |
 | `--copilot-model` | | Copilot model to use for classification (default: `gpt-4o`) |
 | `--verbose` | | Verbose output |
 

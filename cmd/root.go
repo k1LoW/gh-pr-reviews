@@ -33,8 +33,10 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/mattn/go-colorable"
+	"github.com/muesli/termenv"
 
 	"github.com/k1LoW/gh-pr-reviews/gh"
+	"github.com/k1LoW/gh-pr-reviews/output"
 	"github.com/k1LoW/gh-pr-reviews/review"
 	"github.com/k1LoW/gh-pr-reviews/version"
 	"github.com/spf13/cobra"
@@ -45,6 +47,7 @@ var (
 	showAll          bool
 	copilotModel     string
 	verbose          bool
+	jsonOutput       bool
 )
 
 var rootCmd = &cobra.Command{
@@ -107,11 +110,15 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		// Output as JSON.
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(results); err != nil {
-			return fmt.Errorf("failed to encode output: %w", err)
+		if jsonOutput {
+			enc := json.NewEncoder(os.Stdout)
+			enc.SetIndent("", "  ")
+			if err := enc.Encode(results); err != nil {
+				return fmt.Errorf("failed to encode output: %w", err)
+			}
+		} else {
+			p := termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
+			output.RenderMarkdown(os.Stdout, results, p)
 		}
 
 		return nil
@@ -197,6 +204,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&showAll, "all", "a", false, "Show all review comments including resolved ones")
 	rootCmd.Flags().StringVar(&copilotModel, "copilot-model", "gpt-4o", "Copilot model to use for classification")
 	rootCmd.Flags().BoolVar(&verbose, "verbose", false, "Verbose output")
+	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results as JSON")
 
 	// Hide the default completion command.
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
