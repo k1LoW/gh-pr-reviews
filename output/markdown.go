@@ -140,6 +140,7 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, w
 	}
 	if len(parts) > 0 {
 		fmt.Fprintln(w, strings.Join(parts, " | "))
+		fmt.Fprintln(w)
 	}
 
 	// Body.
