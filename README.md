@@ -111,7 +111,7 @@ $ gh extension install k1LoW/gh-pr-reviews
 | `--all` | `-a` | Show all review comments including resolved ones |
 | `--json` | | Output results as JSON |
 | `--width` | `-w` | Output width (0 for auto-detect, default: auto) |
-| `--copilot-model` | | Copilot model to use for classification (default: `gpt-4o`) |
+| `--copilot-model` | | Copilot model to use for classification (default: `claude-haiku-4.5`) |
 | `--verbose` | | Verbose output |
 
 ## Contributing
