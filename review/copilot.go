@@ -214,6 +214,33 @@ func parseClassifyOutput(raw string) (*ClassifyOutput, error) {
 	return &output, nil
 }
 
+// ListCopilotModels returns available model IDs from the Copilot SDK.
+func ListCopilotModels(ctx context.Context) ([]string, error) {
+	if err := checkCopilotCLI(); err != nil {
+		return nil, err
+	}
+
+	client := copilot.NewClient(&copilot.ClientOptions{
+		LogLevel: "error",
+	})
+
+	if err := client.Start(ctx); err != nil {
+		return nil, fmt.Errorf("failed to start copilot client: %w", err)
+	}
+	defer client.Stop() //nolint:errcheck
+
+	models, err := client.ListModels(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list models: %w", err)
+	}
+
+	ids := make([]string, 0, len(models))
+	for _, m := range models {
+		ids = append(ids, m.ID)
+	}
+	return ids, nil
+}
+
 func truncate(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s
