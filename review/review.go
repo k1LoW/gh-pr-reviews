@@ -14,6 +14,7 @@ type Comment struct {
 	Author     string    `json:"author"`
 	CreatedAt  time.Time `json:"created_at"`
 	URL        string    `json:"url"`
+	CommitID   string    `json:"commit_id,omitempty"`
 }
 
 // Thread represents an inline review thread.
@@ -28,18 +29,18 @@ type Thread struct {
 
 // Data holds all review data for a PR.
 type Data struct {
-	Threads    []Thread `json:"threads"`
-	PRComments []Comment      `json:"pr_comments"`
+	Threads    []Thread  `json:"threads"`
+	PRComments []Comment `json:"pr_comments"`
 }
 
 // ClassifyInputThread is a thread entry sent to the classifier.
 type ClassifyInputThread struct {
-	ThreadID            string                `json:"thread_id"`
-	Type                string                `json:"type"`
-	Path                string                `json:"path,omitempty"`
-	Line                *int                  `json:"line,omitempty"`
-	IsResolvedOnGitHub  bool                  `json:"is_resolved_on_github"`
-	Comments            []ClassifyInputComment `json:"comments"`
+	ThreadID           string                 `json:"thread_id"`
+	Type               string                 `json:"type"`
+	Path               string                 `json:"path,omitempty"`
+	Line               *int                   `json:"line,omitempty"`
+	IsResolvedOnGitHub bool                   `json:"is_resolved_on_github"`
+	Comments           []ClassifyInputComment `json:"comments"`
 }
 
 // ClassifyInputComment is a comment entry sent to the classifier.
@@ -96,6 +97,9 @@ type UnresolvedComment struct {
 	ThreadID  string `json:"thread_id,omitempty"`
 	CommentID int64  `json:"comment_id"`
 	Type      string `json:"type"`
+	Path      string `json:"path,omitempty"`
+	Line      *int   `json:"line,omitempty"`
+	CommitID  string `json:"commit_id,omitempty"`
 	Author    string `json:"author"`
 	Body      string `json:"body"`
 	URL       string `json:"url"`
@@ -179,19 +183,23 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 		}
 
 		// Use the first comment as the representative.
-		var author, body, url string
+		var author, body, url, commitID string
 		var commentID int64
 		if len(t.Comments) > 0 {
 			author = t.Comments[0].Author
 			body = t.Comments[0].Body
 			url = t.Comments[0].URL
 			commentID = t.Comments[0].DatabaseID
+			commitID = t.Comments[0].CommitID
 		}
 
 		results = append(results, UnresolvedComment{
 			ThreadID:  t.ID,
 			CommentID: commentID,
 			Type:      "thread",
+			Path:      t.Path,
+			Line:      t.Line,
+			CommitID:  commitID,
 			Author:    author,
 			Body:      body,
 			URL:       url,
