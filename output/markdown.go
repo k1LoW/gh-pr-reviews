@@ -127,7 +127,7 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, w
 	// Author.
 	author := p.String("@" + c.Author).Bold()
 
-	fmt.Fprintf(w, "### %s %s — %s\n", cat, status, author)
+	fmt.Fprintf(w, "### %s %s — %s\n\n", cat, status, author)
 
 	// Location line: line number + URL.
 	var parts []string
