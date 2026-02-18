@@ -204,7 +204,7 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringVarP(&flagRepoSelector, "repo", "R", "", "Select another repository using the [HOST/]OWNER/REPO format")
 	rootCmd.Flags().BoolVarP(&showAll, "all", "a", false, "Show all review comments including resolved ones")
-	rootCmd.Flags().StringVar(&copilotModel, "copilot-model", "gpt-4o", "Copilot model to use for classification")
+	rootCmd.Flags().StringVar(&copilotModel, "copilot-model", "claude-haiku-4.5", "Copilot model to use for classification")
 	rootCmd.Flags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results as JSON")
 	rootCmd.Flags().IntVarP(&widthFlag, "width", "w", 0, "Output width (0 for auto-detect)")
