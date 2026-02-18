@@ -3,10 +3,13 @@ package output
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/k1LoW/gh-pr-reviews/review"
+	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/termenv"
+	"golang.org/x/term"
 )
 
 var (
@@ -14,11 +17,33 @@ var (
 	colorPurpleLight   = "#C898FD"
 	colorOrange        = "#F08A3A"
 	colorOrangeBright  = "#FE4C25"
-	colorPurpleDark    = "#43179E"
+	colorLink          = "#58A6FF"
 )
 
+const maxWidth = 120
+const defaultWidth = 80
+
+// DetectWidth returns the appropriate output width.
+// If widthFlag > 0, it is used as-is. Otherwise, terminal width is detected
+// (capped at 120) with a fallback of 80 for non-TTY.
+func DetectWidth(widthFlag int) int {
+	if widthFlag > 0 {
+		return widthFlag
+	}
+	fd := int(os.Stdout.Fd()) //nolint:gosec // Fd() returns a small file descriptor.
+	if term.IsTerminal(fd) {
+		if w, _, err := term.GetSize(fd); err == nil && w > 0 {
+			if w > maxWidth {
+				return maxWidth
+			}
+			return w
+		}
+	}
+	return defaultWidth
+}
+
 // RenderMarkdown writes review results in a colored Markdown-style format.
-func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.Output) {
+func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.Output, width int) {
 	if len(results) == 0 {
 		fmt.Fprintln(w, "No unresolved comments found.")
 		return
@@ -61,7 +86,7 @@ func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.
 		fmt.Fprintln(w)
 
 		for i, c := range g.comments {
-			renderComment(w, c, p)
+			renderComment(w, c, p, width)
 			if i < len(g.comments)-1 {
 				fmt.Fprintln(w, p.String("---").Faint())
 				fmt.Fprintln(w)
@@ -78,7 +103,7 @@ func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.
 		fmt.Fprintln(w)
 
 		for i, c := range prComments {
-			renderComment(w, c, p)
+			renderComment(w, c, p, width)
 			if i < len(prComments)-1 {
 				fmt.Fprintln(w, p.String("---").Faint())
 				fmt.Fprintln(w)
@@ -87,7 +112,7 @@ func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.
 	}
 }
 
-func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output) {
+func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, width int) {
 	// Category label.
 	cat := p.String(c.Category).Foreground(p.Color(categoryColor(c.Category)))
 
@@ -110,7 +135,7 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output) {
 		parts = append(parts, fmt.Sprintf("L%d", *c.Line))
 	}
 	if c.URL != "" {
-		link := p.String(c.URL).Foreground(p.Color(colorPurpleDark)).Underline()
+		link := p.String(c.URL).Foreground(p.Color(colorLink)).Underline()
 		parts = append(parts, link.String())
 	}
 	if len(parts) > 0 {
@@ -118,8 +143,8 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output) {
 	}
 
 	// Body.
-	fmt.Fprintln(w, c.Body)
-	fmt.Fprintln(w)
+	fmt.Fprintln(w, wordwrap.String(c.Body, width))
+
 }
 
 func categoryColor(category string) string {
