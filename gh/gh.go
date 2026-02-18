@@ -37,11 +37,12 @@ type reviewThreadsQuery struct {
 					Line       *int
 					Comments   struct {
 						Nodes []struct {
-							ID        string
-							Body      string
-							Author    struct{ Login string }
-							CreatedAt time.Time
-							URL       string `graphql:"url"`
+							ID         string
+							DatabaseId int64
+							Body       string
+							Author     struct{ Login string }
+							CreatedAt  time.Time
+							URL        string `graphql:"url"`
 						}
 					} `graphql:"comments(first: 100)"`
 				}
@@ -101,11 +102,12 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 			}
 			for _, c := range node.Comments.Nodes {
 				thread.Comments = append(thread.Comments, review.Comment{
-					ID:        c.ID,
-					Body:      c.Body,
-					Author:    c.Author.Login,
-					CreatedAt: c.CreatedAt,
-					URL:       c.URL,
+					ID:         c.ID,
+					DatabaseID: c.DatabaseId,
+					Body:       c.Body,
+					Author:     c.Author.Login,
+					CreatedAt:  c.CreatedAt,
+					URL:        c.URL,
 				})
 			}
 			data.Threads = append(data.Threads, thread)

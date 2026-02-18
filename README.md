@@ -22,16 +22,29 @@ $ gh pr-reviews --all
 
 ### Output
 
-JSON array of review comments with classification and resolution status:
+JSON array of review comments with classification and resolution status.
+
+There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id` is only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying.
 
 ```json
 [
   {
     "thread_id": "PRRT_kwDOH7hXo85vAD-t",
+    "comment_id": 2815812186,
     "type": "thread",
     "author": "reviewer",
     "body": "This should use error wrapping",
     "url": "https://github.com/owner/repo/pull/123#discussion_r123456",
+    "category": "suggestion",
+    "resolved": false,
+    "reason": "No follow-up addressing this feedback"
+  },
+  {
+    "comment_id": 2815800000,
+    "type": "comment",
+    "author": "reviewer",
+    "body": "Overall looks good but please address the error handling",
+    "url": "https://github.com/owner/repo/pull/123#issuecomment-123456",
     "category": "suggestion",
     "resolved": false,
     "reason": "No follow-up addressing this feedback"

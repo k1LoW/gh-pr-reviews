@@ -8,11 +8,12 @@ import (
 
 // Comment represents a single review comment.
 type Comment struct {
-	ID        string    `json:"id"`
-	Body      string    `json:"body"`
-	Author    string    `json:"author"`
-	CreatedAt time.Time `json:"created_at"`
-	URL       string    `json:"url"`
+	ID         string    `json:"id"`
+	DatabaseID int64     `json:"database_id"`
+	Body       string    `json:"body"`
+	Author     string    `json:"author"`
+	CreatedAt  time.Time `json:"created_at"`
+	URL        string    `json:"url"`
 }
 
 // Thread represents an inline review thread.
@@ -92,14 +93,15 @@ type CommentClassifier interface {
 
 // UnresolvedComment is the JSON output structure for CLI results.
 type UnresolvedComment struct {
-	ThreadID string `json:"thread_id"`
-	Type     string `json:"type"`
-	Author   string `json:"author"`
-	Body     string `json:"body"`
-	URL      string `json:"url"`
-	Category string `json:"category"`
-	Resolved bool   `json:"resolved"`
-	Reason   string `json:"reason"`
+	ThreadID  string `json:"thread_id,omitempty"`
+	CommentID int64  `json:"comment_id"`
+	Type      string `json:"type"`
+	Author    string `json:"author"`
+	Body      string `json:"body"`
+	URL       string `json:"url"`
+	Category  string `json:"category"`
+	Resolved  bool   `json:"resolved"`
+	Reason    string `json:"reason"`
 }
 
 // Analyze classifies and filters review comments, returning unresolved ones (or all if showAll is true).
@@ -178,21 +180,24 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 
 		// Use the first comment as the representative.
 		var author, body, url string
+		var commentID int64
 		if len(t.Comments) > 0 {
 			author = t.Comments[0].Author
 			body = t.Comments[0].Body
 			url = t.Comments[0].URL
+			commentID = t.Comments[0].DatabaseID
 		}
 
 		results = append(results, UnresolvedComment{
-			ThreadID: t.ID,
-			Type:     "thread",
-			Author:   author,
-			Body:     body,
-			URL:      url,
-			Category: category,
-			Resolved: resolved,
-			Reason:   reason,
+			ThreadID:  t.ID,
+			CommentID: commentID,
+			Type:      "thread",
+			Author:    author,
+			Body:      body,
+			URL:       url,
+			Category:  category,
+			Resolved:  resolved,
+			Reason:    reason,
 		})
 	}
 
@@ -217,14 +222,14 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 		}
 
 		results = append(results, UnresolvedComment{
-			ThreadID: c.ID,
-			Type:     "comment",
-			Author:   c.Author,
-			Body:     c.Body,
-			URL:      c.URL,
-			Category: category,
-			Resolved: resolved,
-			Reason:   reason,
+			CommentID: c.DatabaseID,
+			Type:      "comment",
+			Author:    c.Author,
+			Body:      c.Body,
+			URL:       c.URL,
+			Category:  category,
+			Resolved:  resolved,
+			Reason:    reason,
 		})
 	}
 
