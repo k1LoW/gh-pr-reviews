@@ -43,6 +43,7 @@ type reviewThreadsQuery struct {
 							Author     struct{ Login string }
 							CreatedAt  time.Time
 							URL        string `graphql:"url"`
+							DiffHunk   string
 							Commit     struct {
 								Oid string
 							}
@@ -111,6 +112,7 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 					Author:     c.Author.Login,
 					CreatedAt:  c.CreatedAt,
 					URL:        c.URL,
+					DiffHunk:   c.DiffHunk,
 					CommitID:   c.Commit.Oid,
 				})
 			}
