@@ -15,7 +15,7 @@ func newTestOutput() *termenv.Output {
 
 func TestRenderMarkdownEmpty(t *testing.T) {
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, nil, newTestOutput())
+	RenderMarkdown(&buf, nil, newTestOutput(), 80)
 	want := "No unresolved comments found.\n"
 	if buf.String() != want {
 		t.Errorf("got %q, want %q", buf.String(), want)
@@ -24,7 +24,7 @@ func TestRenderMarkdownEmpty(t *testing.T) {
 
 func TestRenderMarkdownEmptySlice(t *testing.T) {
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, []review.UnresolvedComment{}, newTestOutput())
+	RenderMarkdown(&buf, []review.UnresolvedComment{}, newTestOutput(), 80)
 	want := "No unresolved comments found.\n"
 	if buf.String() != want {
 		t.Errorf("got %q, want %q", buf.String(), want)
@@ -60,7 +60,7 @@ func TestRenderMarkdownGroupedThreads(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, results, newTestOutput())
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
 	out := buf.String()
 
 	// Verify file path header appears once.
@@ -107,7 +107,7 @@ func TestRenderMarkdownPRComments(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, results, newTestOutput())
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
 	out := buf.String()
 
 	if !strings.Contains(out, "## PR Comments") {
@@ -146,7 +146,7 @@ func TestRenderMarkdownMixedTypes(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, results, newTestOutput())
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
 	out := buf.String()
 
 	if !strings.Contains(out, "## lib/utils.go") {
@@ -178,7 +178,7 @@ func TestRenderMarkdownResolvedStatus(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, results, newTestOutput())
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
 	out := buf.String()
 
 	if !strings.Contains(out, "(resolved)") {
@@ -205,7 +205,7 @@ func TestRenderMarkdownNoLine(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	RenderMarkdown(&buf, results, newTestOutput())
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
 	out := buf.String()
 
 	// Should not contain "L" prefix for line number.
@@ -216,5 +216,33 @@ func TestRenderMarkdownNoLine(t *testing.T) {
 	// URL should still be present.
 	if !strings.Contains(out, "https://github.com/example/1") {
 		t.Error("missing URL")
+	}
+}
+
+func TestRenderMarkdownWordWrap(t *testing.T) {
+	results := []review.UnresolvedComment{
+		{
+			Type:     "comment",
+			Author:   "alice",
+			Body:     "This is a long comment that should be wrapped at word boundaries when the width is narrow enough",
+			URL:      "https://github.com/example/1",
+			Category: "suggestion",
+			Resolved: false,
+		},
+	}
+
+	var buf bytes.Buffer
+	RenderMarkdown(&buf, results, newTestOutput(), 40)
+	out := buf.String()
+
+	// Body lines should not exceed the width.
+	for _, line := range strings.Split(out, "\n") {
+		// Skip header/URL lines (they are not wrapped).
+		if strings.HasPrefix(line, "### ") || strings.HasPrefix(line, "##") || strings.Contains(line, "https://") || strings.HasPrefix(line, "---") {
+			continue
+		}
+		if len(line) > 40 {
+			t.Errorf("line exceeds width 40: %q (len=%d)", line, len(line))
+		}
 	}
 }

@@ -28,13 +28,17 @@ By default, results are displayed in a colored Markdown-style format grouped by 
 ## src/handler.go
 
 ### suggestion (unresolved) — @reviewer
+
 L42 | https://github.com/owner/repo/pull/123#discussion_r123456
+
 This should use error wrapping
 
 ## PR Comments
 
 ### suggestion (unresolved) — @reviewer
+
 https://github.com/owner/repo/pull/123#issuecomment-123456
+
 Overall looks good but please address the error handling
 ```
 
@@ -106,6 +110,7 @@ $ gh extension install k1LoW/gh-pr-reviews
 | `--repo` | `-R` | Select another repository using the `[HOST/]OWNER/REPO` format |
 | `--all` | `-a` | Show all review comments including resolved ones |
 | `--json` | | Output results as JSON |
+| `--width` | `-w` | Output width (0 for auto-detect, default: auto) |
 | `--copilot-model` | | Copilot model to use for classification (default: `gpt-4o`) |
 | `--verbose` | | Verbose output |
 

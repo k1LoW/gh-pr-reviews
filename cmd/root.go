@@ -48,6 +48,7 @@ var (
 	copilotModel     string
 	verbose          bool
 	jsonOutput       bool
+	widthFlag        int
 )
 
 var rootCmd = &cobra.Command{
@@ -118,7 +119,8 @@ var rootCmd = &cobra.Command{
 			}
 		} else {
 			p := termenv.NewOutput(os.Stdout, termenv.WithColorCache(true))
-			output.RenderMarkdown(os.Stdout, results, p)
+			w := output.DetectWidth(widthFlag)
+			output.RenderMarkdown(os.Stdout, results, p, w)
 		}
 
 		return nil
@@ -205,6 +207,7 @@ func init() {
 	rootCmd.Flags().StringVar(&copilotModel, "copilot-model", "gpt-4o", "Copilot model to use for classification")
 	rootCmd.Flags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results as JSON")
+	rootCmd.Flags().IntVarP(&widthFlag, "width", "w", 0, "Output width (0 for auto-detect)")
 
 	// Hide the default completion command.
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
