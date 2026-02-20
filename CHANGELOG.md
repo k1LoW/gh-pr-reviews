@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.5.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.0...v0.5.1) - 2026-02-20
+
 ## [v0.5.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.4.0...v0.5.0) - 2026-02-18
 ### New Features 🎉
 - fix: evaluate resolution status for question category via Copilot by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/15
