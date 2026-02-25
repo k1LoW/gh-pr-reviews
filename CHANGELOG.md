@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.0...v0.5.1) - 2026-02-25
+### Dependency Updates ⬆️
+- chore(deps): bump golang.org/x/term from 0.30.0 to 0.40.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/17
+
 ## [v0.5.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.4.0...v0.5.0) - 2026-02-18
 ### New Features 🎉
 - fix: evaluate resolution status for question category via Copilot by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/15
