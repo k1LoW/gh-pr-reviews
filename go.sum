@@ -14,8 +14,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
-github.com/github/copilot-sdk/go v0.1.25 h1:SJ/jSoesbpjDEBcvMkoCG+xITvgvnhxnd6oJdmNQnOs=
-github.com/github/copilot-sdk/go v0.1.25/go.mod h1:qc2iEF7hdO8kzSvbyGvrcGhuk2fzdW4xTtT0+1EH2ts=
+github.com/github/copilot-sdk/go v0.1.30 h1:WUihzt8VOEAwkcjX2zlYJydgL+2lQZwn/syfh412vwA=
+github.com/github/copilot-sdk/go v0.1.30/go.mod h1:qc2iEF7hdO8kzSvbyGvrcGhuk2fzdW4xTtT0+1EH2ts=
 github.com/golang-jwt/jwt/v4 v4.5.2 h1:YtQM7lnr8iZ+j5q71MGKkNw9Mn7AjHM68uc9g5fXeUI=
 github.com/golang-jwt/jwt/v4 v4.5.2/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
