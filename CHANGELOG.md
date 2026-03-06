@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.1...v0.5.2) - 2026-03-06
+### Fix bug 🐛
+- feat: add OnPermissionRequest handler to Copilot session config by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/21
+
 ## [v0.5.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.0...v0.5.1) - 2026-03-06
 ### New Features 🎉
 - feat: improve Copilot prompt to reduce unknown categories by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/20
