@@ -63,7 +63,8 @@ func NewCopilotClassifier(ctx context.Context, model string) (*CopilotClassifier
 	}
 
 	session, err := client.CreateSession(ctx, &copilot.SessionConfig{
-		Model: model,
+		OnPermissionRequest: copilot.PermissionHandler.ApproveAll,
+		Model:               model,
 		SystemMessage: &copilot.SystemMessageConfig{
 			Content: systemPrompt,
 		},
