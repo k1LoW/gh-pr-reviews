@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.5.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.0...v0.5.1) - 2026-03-06
+### New Features 🎉
+- feat: improve Copilot prompt to reduce unknown categories by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/20
+### Dependency Updates ⬆️
+- chore(deps): bump golang.org/x/term from 0.30.0 to 0.40.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/17
+- chore(deps): bump github.com/github/copilot-sdk/go from 0.1.25 to 0.1.30 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/18
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/19
+
 ## [v0.5.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.4.0...v0.5.0) - 2026-02-18
 ### New Features 🎉
 - fix: evaluate resolution status for question category via Copilot by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/15
