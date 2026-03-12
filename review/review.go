@@ -159,6 +159,33 @@ func buildClassifyInput(data *Data) *ClassifyInput {
 	return input
 }
 
+var validCategories = map[string]bool{
+	"suggestion":    true,
+	"nitpick":       true,
+	"issue":         true,
+	"question":      true,
+	"approval":      true,
+	"informational": true,
+}
+
+// normalizeCategory falls back to "informational" for unrecognized categories.
+func normalizeCategory(category string) string {
+	if validCategories[category] {
+		return category
+	}
+	return "informational"
+}
+
+// normalizeResolved forces is_resolved to true for categories that are always resolved.
+func normalizeResolved(category string, resolved bool) bool {
+	switch category {
+	case "approval", "informational":
+		return true
+	default:
+		return resolved
+	}
+}
+
 func buildResults(data *Data, output *ClassifyOutput, showAll bool) []UnresolvedComment {
 	var results []UnresolvedComment
 
@@ -170,13 +197,13 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 	for _, t := range data.Threads {
 		classified, ok := threadMap[t.ID]
 		resolved := t.IsResolved
-		category := "unknown"
+		category := "informational"
 		reason := ""
 		if ok {
-			category = classified.Category
+			category = normalizeCategory(classified.Category)
 			reason = classified.Reason
 			if !resolved {
-				resolved = classified.IsResolved
+				resolved = normalizeResolved(category, classified.IsResolved)
 			}
 		}
 
@@ -221,11 +248,11 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 	for _, c := range data.PRComments {
 		classified, ok := commentMap[c.ID]
 		resolved := false
-		category := "unknown"
+		category := "informational"
 		reason := ""
 		if ok {
-			category = classified.Category
-			resolved = classified.IsResolved
+			category = normalizeCategory(classified.Category)
+			resolved = normalizeResolved(category, classified.IsResolved)
 			reason = classified.Reason
 		}
 
