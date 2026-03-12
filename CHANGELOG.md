@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.6.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.2...v0.6.0) - 2026-03-12
+### Breaking Changes 🛠
+- fix: normalize Copilot classification output by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/25
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/github/copilot-sdk/go from 0.1.30 to 0.1.32 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/23
+
 ## [v0.5.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.1...v0.5.2) - 2026-03-06
 ### Fix bug 🐛
 - feat: add OnPermissionRequest handler to Copilot session config by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/21
