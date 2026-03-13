@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.7.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.6.0...v0.7.0) - 2026-03-13
+### Breaking Changes 🛠
+- refactor: replace validCategories map with switch and extract default constant by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/26
+
 ## [v0.6.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.5.2...v0.6.0) - 2026-03-12
 ### Breaking Changes 🛠
 - fix: normalize Copilot classification output by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/25
