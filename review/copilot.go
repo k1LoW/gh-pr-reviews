@@ -140,7 +140,7 @@ func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInpu
 // Close shuts down the Copilot session and client.
 func (c *CopilotClassifier) Close() {
 	if c.session != nil {
-		c.session.Destroy() //nolint:errcheck
+		c.session.Disconnect() //nolint:errcheck
 	}
 	if c.client != nil {
 		c.client.Stop() //nolint:errcheck
