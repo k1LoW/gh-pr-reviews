@@ -159,21 +159,16 @@ func buildClassifyInput(data *Data) *ClassifyInput {
 	return input
 }
 
-var validCategories = map[string]bool{
-	"suggestion":    true,
-	"nitpick":       true,
-	"issue":         true,
-	"question":      true,
-	"approval":      true,
-	"informational": true,
-}
+const defaultCategory = "informational"
 
 // normalizeCategory falls back to "informational" for unrecognized categories.
 func normalizeCategory(category string) string {
-	if validCategories[category] {
+	switch category {
+	case "suggestion", "nitpick", "issue", "question", "approval", "informational":
 		return category
+	default:
+		return defaultCategory
 	}
-	return "informational"
 }
 
 // normalizeResolved forces is_resolved to true for categories that are always resolved.
@@ -197,7 +192,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 	for _, t := range data.Threads {
 		classified, ok := threadMap[t.ID]
 		resolved := t.IsResolved
-		category := "informational"
+		category := defaultCategory
 		reason := ""
 		if ok {
 			category = normalizeCategory(classified.Category)
@@ -248,7 +243,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 	for _, c := range data.PRComments {
 		classified, ok := commentMap[c.ID]
 		resolved := false
-		category := "informational"
+		category := defaultCategory
 		reason := ""
 		if ok {
 			category = normalizeCategory(classified.Category)
