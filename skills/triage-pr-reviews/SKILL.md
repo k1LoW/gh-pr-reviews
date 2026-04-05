@@ -75,7 +75,7 @@ For each comment, in order:
      4. **Skip** — Move on without taking action
    - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
 
-3. **Execute the chosen action** — code fixes and commits are applied immediately during the walkthrough. **GitHub API actions (reply, comment, resolve) are deferred** to Phase 4, after push. During this phase, confirm the reply/comment content with the user and queue it for later execution.
+3. **Execute the chosen action** — code fixes and commits are applied immediately during the walkthrough. **GitHub API actions (reply, comment, resolve) are deferred** to Phase 4, after push. During this phase, confirm the reply/comment content with the user and queue it for later execution. When an action includes a code fix, record the commit hash so it can be referenced in the queued reply/comment.
    - **Fix in code**: Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit.
    - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit. Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply and resolve for Phase 4.
    - **Fix & reply** (`type: "thread"`): Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit. Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply for Phase 4.
@@ -107,10 +107,13 @@ Pending GitHub actions: <n> replies, <n> comments, <n> resolves
 
 2. **Ask: "Push?"** — If the user agrees, push to the remote. If the user declines, skip this step.
 
-3. **Ask: "Execute queued replies/comments/resolves?"** — Show the list of pending GitHub API actions. If the user agrees, execute them all:
-   - For thread replies: `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`
-   - For PR-level comments: `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`
-   - For thread resolves: `gh api graphql` using `thread_id` (not `comment_id`)
+3. **Execute queued replies/comments/resolves** — Show the list of pending GitHub API actions. For actions that include a code fix, include the commit hash in the reply/comment (e.g., "Fixed in abc1234.").
+   - **If push succeeded**: Ask "Execute queued replies/comments/resolves?" and execute if the user agrees.
+   - **If push was declined**: Warn that executing replies/resolves before pushing means reviewers cannot see the fixes yet. Require explicit confirmation: "Execute queued replies/comments/resolves without pushing?" Only execute if the user confirms after this warning.
+   - Endpoints:
+     - For thread replies: `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`
+     - For PR-level comments: `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`
+     - For thread resolves: `gh api graphql` using `thread_id` (not `comment_id`)
    - If the user declines, show the pending actions list so they can execute manually later.
 
 4. **Show the final result**:
