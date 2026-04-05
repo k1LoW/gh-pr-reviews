@@ -70,17 +70,19 @@ For each comment, in order:
      6. **Skip** — Move on without taking action
    - For `type: "comment"` (PR-level comment), offer:
      1. **Fix in code** — Make the code change only
-     2. **Fix & reply** — Make the code change and post a reply
-     3. **Reply only** — Post a reply comment on GitHub
+     2. **Fix & comment** — Make the code change and post a PR-level comment
+     3. **Comment only** — Post a PR-level comment on GitHub
      4. **Skip** — Move on without taking action
    - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
 
 3. **Execute the chosen action**:
    - **Fix in code**: Make the code change only.
-   - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, ask the user what to reply (or suggest a draft reply), post the reply via `gh api`, and resolve the thread via `gh api`.
-   - **Fix & reply**: Make the code change, ask the user what to reply (or suggest a draft reply), and post the reply via `gh api`.
-   - **Reply & resolve** (`type: "thread"` only): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` and resolve the thread via `gh api`.
-   - **Reply only**: Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api`.
+   - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, ask the user what to reply (or suggest a draft reply), post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`, and resolve the thread via `gh api graphql` using `thread_id` (not `comment_id`).
+   - **Fix & reply** (`type: "thread"`): Make the code change, ask the user what to reply (or suggest a draft reply), and post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`.
+   - **Fix & comment** (`type: "comment"`): Make the code change, ask the user what to comment (or suggest a draft), and post a PR-level comment via `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`.
+   - **Reply & resolve** (`type: "thread"` only): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies` and resolve the thread via `gh api graphql` using `thread_id` (not `comment_id`).
+   - **Reply only** (`type: "thread"`): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`.
+   - **Comment only** (`type: "comment"`): Ask the user what to comment (or suggest a draft). Then post a PR-level comment via `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`.
    - **Skip**: Do nothing, proceed to the next comment.
    - **Other (free-text)**: Follow the user's custom instructions for this comment. This may combine multiple actions or request something not covered by the predefined options.
 
@@ -95,14 +97,16 @@ After all comments have been walked through, show a final summary:
 
 | # | Category | Author | Assessment | Action Taken |
 |---|----------|--------|------------|--------------|
-| 1 | <category> | @<author> | <assessment> | Fixed / Fixed & replied & resolved / Fixed & replied / Replied & resolved / Replied / Skipped |
+| 1 | <category> | @<author> | <assessment> | Fixed / Fixed & replied & resolved / Fixed & replied / Fixed & commented / Replied & resolved / Replied / Commented / Skipped |
 | 2 | ... | ... | ... | ... |
 
 - Fixed: n
 - Fixed & replied & resolved: n
 - Fixed & replied: n
+- Fixed & commented: n
 - Replied & resolved: n
 - Replied only: n
+- Commented only: n
 - Skipped: n
 ```
 
