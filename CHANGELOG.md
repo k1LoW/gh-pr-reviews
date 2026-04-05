@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.8.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.7.0...v0.8.0) - 2026-04-05
+### New Features 🎉
+- feat: make triage-pr-reviews skill interactive with one-by-one walkthrough by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/33
+### Dependency Updates ⬆️
+- chore(deps): bump reviewdog/action-golangci-lint from 2.8.0 to 2.10.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/29
+- chore(deps): bump golang.org/x/term from 0.40.0 to 0.41.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/28
+- chore(deps): bump github.com/github/copilot-sdk/go from 0.1.32 to 0.2.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/31
+- chore(deps): bump actions/setup-go from 6.3.0 to 6.4.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/32
+
 ## [v0.7.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.6.0...v0.7.0) - 2026-03-13
 ### Breaking Changes 🛠
 - refactor: replace validCategories map with switch and extract default constant by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/26
