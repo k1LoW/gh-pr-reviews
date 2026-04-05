@@ -140,7 +140,7 @@ Pending GitHub actions: <n> replies, <n> comments, <n> resolves
 
 ## Rules
 
-- Do NOT commit or push unless the user explicitly requests it.
+- When the user selects a "Fix" action, this is an implicit request to commit. Draft a commit message, confirm it with the user, and commit. Do NOT push unless explicitly confirmed in Phase 4.
 - When fixing code, make minimal changes that address the review comment.
 - When suggesting reply drafts, keep them concise and professional.
 - If code context is unclear, search the codebase to verify before making a judgment.
