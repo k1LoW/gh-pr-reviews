@@ -3,11 +3,15 @@ name: triage-pr-reviews
 description: >
   Triages unresolved PR review comments using gh-pr-reviews.
   Analyzes code context and classifies each comment as Agree / Partially Agree / Disagree.
+  Walks through each comment one-by-one, asking the user what action to take.
   Use when the user wants to triage, review, or analyze unresolved PR comments.
 compatibility: Requires gh CLI and gh-pr-reviews extension (gh extension install k1LoW/gh-pr-reviews)
 ---
 
 # Triage PR Review Comments
+
+## Phase 1: Fetch and Analyze
+
 1. Run `gh pr-reviews [arg] --json` to get unresolved review comments as JSON. If no argument is given, use the current branch's PR. Note: this command uses Copilot for classification and may take a while depending on the number of comments — use a longer timeout. Each JSON object contains:
    - `comment_id` (int): REST API comment ID — usable for replying via `gh api`
    - `thread_id` (string, only for `type: "thread"`): inline review thread ID
@@ -20,30 +24,89 @@ compatibility: Requires gh CLI and gh-pr-reviews extension (gh extension install
 3. For `type: "thread"` comments, use `path`, `line`, and `diff_hunk` from the JSON response to identify the exact file location. For `type: "comment"` (PR-level), there is no file location.
 4. Check code context for each comment. Leverage any existing conversation context first. Only fetch additional context via `gh pr diff` or file reads when necessary.
 5. Evaluate each comment against the code context. Classify as **Agree**, **Partially Agree**, or **Disagree** with a rationale and suggested action.
-6. Output results in this format:
+
+## Phase 2: Summary Overview
+
+Show a brief summary of all comments before starting the interactive walkthrough:
 
 ```
-## Unresolved Review Comments Analysis
+## Unresolved Review Comments — PR #<number> (<title>)
 
-**PR**: #<number> (<title>)
-**Unresolved comments**: <count>
+| # | Category | Author | Assessment | File |
+|---|----------|--------|------------|------|
+| 1 | <category> | @<author> | Agree/Partially Agree/Disagree | `<path>:<line>` |
+| 2 | ... | ... | ... | ... |
 
+Total: <count> comments — Agree: n, Partially Agree: n, Disagree: n
+
+Walking through each comment below...
+```
+
+## Phase 3: Interactive Walkthrough (one-by-one)
+
+For each comment, in order:
+
+1. **Present the comment** in this format:
+
+```
 ---
-
-### Comment 1 — [<category>] by @<author>
+### [<current>/<total>] [<category>] by @<author>
 > <comment body>
 
-**File**: `<path>` (line <line>)
-**Assessment**: Agree | Partially Agree | Disagree
+**File**: `<path>` (line <line>)   ← omit for PR-level comments
+**Assessment**: <Agree | Partially Agree | Disagree>
 **Rationale**: <1-3 sentences>
 **Suggested action**: <recommended action>
-
----
-
-## Summary
-- Agree: n — should be addressed
-- Partially Agree: n — worth discussing
-- Disagree: n — can be explained or dismissed
 ```
 
-Do NOT write to GitHub (no commenting, resolving, or any mutations). Do NOT commit or push. If code context is unclear, search the codebase to verify before making a judgment. Prefer `gh` commands for GitHub data.
+2. **Ask the user what to do**. Present the following action choices and wait for the user's response before proceeding. The user may pick one of the predefined actions or provide free-text instructions:
+
+   - **Fix in code** — Make the code change to address this review comment
+   - **Reply & resolve** — Post a reply comment on GitHub and resolve the thread
+   - **Reply only** — Post a reply comment on GitHub without resolving
+   - **Skip** — Move on without taking action
+   - Or the user may provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
+
+3. **Execute the chosen action**:
+   - **Fix in code**: Make the code change. After the fix, ask the user whether to also reply on GitHub to let the reviewer know (optional).
+   - **Reply & resolve**: Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` and resolve the thread via `gh api`.
+   - **Reply only**: Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api`.
+   - **Skip**: Do nothing, proceed to the next comment.
+   - **Other (free-text)**: Follow the user's custom instructions for this comment. This may combine multiple actions or request something not covered by the predefined options.
+
+4. After completing the action (or skipping), move to the next comment and repeat.
+
+## Phase 4: Final Summary
+
+After all comments have been walked through, show a final summary:
+
+```
+## Triage Complete
+
+| # | Category | Author | Assessment | Action Taken |
+|---|----------|--------|------------|--------------|
+| 1 | <category> | @<author> | <assessment> | Fixed / Replied & resolved / Replied / Skipped |
+| 2 | ... | ... | ... | ... |
+
+- Fixed: n
+- Replied & resolved: n
+- Replied only: n
+- Skipped: n
+```
+
+## GitHub API Reference
+
+- **Reply to an inline review comment (thread)**:
+  `gh api repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies -f body="<reply>"`
+- **Reply to a PR-level comment (issue comment)**:
+  `gh api repos/{owner}/{repo}/issues/{pull_number}/comments -f body="<reply>"`
+- **Resolve a review thread**:
+  `gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thread_id>"}) { thread { id } } }'`
+
+## Rules
+
+- Do NOT commit or push unless the user explicitly requests it.
+- When fixing code, make minimal changes that address the review comment.
+- When suggesting reply drafts, keep them concise and professional.
+- If code context is unclear, search the codebase to verify before making a judgment.
+- Prefer `gh` commands for GitHub data.
