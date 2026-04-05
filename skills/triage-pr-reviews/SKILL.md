@@ -35,7 +35,7 @@ Show a brief summary of all comments before starting the interactive walkthrough
 | # | Category | Author | Assessment | File |
 |---|----------|--------|------------|------|
 | 1 | <category> | @<author> | Agree/Partially Agree/Disagree | `<path>:<line>` |
-| 2 | ... | ... | ... | ... |
+| 2 | <category> | @<author> | Agree/Partially Agree/Disagree | `PR-level` |
 
 Total: <count> comments — Agree: n, Partially Agree: n, Disagree: n
 
@@ -61,15 +61,25 @@ For each comment, in order:
 
 2. **Ask the user what to do**. Present the following action choices and wait for the user's response before proceeding. The user may pick one of the predefined actions or provide free-text instructions:
 
-   - **Fix in code** — Make the code change to address this review comment
-   - **Reply & resolve** — Post a reply comment on GitHub and resolve the thread
-   - **Reply only** — Post a reply comment on GitHub without resolving
-   - **Skip** — Move on without taking action
-   - Or the user may provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
+   - For `type: "thread"` (inline review thread), offer:
+     1. **Fix in code** — Make the code change only
+     2. **Fix & reply & resolve** — Make the code change, post a reply, and resolve the thread
+     3. **Fix & reply** — Make the code change and post a reply without resolving
+     4. **Reply & resolve** — Post a reply comment on GitHub and resolve the thread
+     5. **Reply only** — Post a reply comment on GitHub without resolving
+     6. **Skip** — Move on without taking action
+   - For `type: "comment"` (PR-level comment), offer:
+     1. **Fix in code** — Make the code change only
+     2. **Fix & reply** — Make the code change and post a reply
+     3. **Reply only** — Post a reply comment on GitHub
+     4. **Skip** — Move on without taking action
+   - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
 
 3. **Execute the chosen action**:
-   - **Fix in code**: Make the code change. After the fix, ask the user whether to also reply on GitHub to let the reviewer know (optional).
-   - **Reply & resolve**: Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` and resolve the thread via `gh api`.
+   - **Fix in code**: Make the code change only.
+   - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, ask the user what to reply (or suggest a draft reply), post the reply via `gh api`, and resolve the thread via `gh api`.
+   - **Fix & reply**: Make the code change, ask the user what to reply (or suggest a draft reply), and post the reply via `gh api`.
+   - **Reply & resolve** (`type: "thread"` only): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` and resolve the thread via `gh api`.
    - **Reply only**: Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api`.
    - **Skip**: Do nothing, proceed to the next comment.
    - **Other (free-text)**: Follow the user's custom instructions for this comment. This may combine multiple actions or request something not covered by the predefined options.
@@ -85,10 +95,12 @@ After all comments have been walked through, show a final summary:
 
 | # | Category | Author | Assessment | Action Taken |
 |---|----------|--------|------------|--------------|
-| 1 | <category> | @<author> | <assessment> | Fixed / Replied & resolved / Replied / Skipped |
+| 1 | <category> | @<author> | <assessment> | Fixed / Fixed & replied & resolved / Fixed & replied / Replied & resolved / Replied / Skipped |
 | 2 | ... | ... | ... | ... |
 
 - Fixed: n
+- Fixed & replied & resolved: n
+- Fixed & replied: n
 - Replied & resolved: n
 - Replied only: n
 - Skipped: n
@@ -98,7 +110,7 @@ After all comments have been walked through, show a final summary:
 
 - **Reply to an inline review comment (thread)**:
   `gh api repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies -f body="<reply>"`
-- **Reply to a PR-level comment (issue comment)**:
+- **Post a PR-level comment (issue comment)**:
   `gh api repos/{owner}/{repo}/issues/{pull_number}/comments -f body="<reply>"`
 - **Resolve a review thread**:
   `gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thread_id>"}) { thread { id } } }'`
