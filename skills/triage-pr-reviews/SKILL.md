@@ -75,38 +75,57 @@ For each comment, in order:
      4. **Skip** — Move on without taking action
    - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
 
-3. **Execute the chosen action**:
-   - **Fix in code**: Make the code change only.
-   - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, ask the user what to reply (or suggest a draft reply), post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`, and resolve the thread via `gh api graphql` using `thread_id` (not `comment_id`).
-   - **Fix & reply** (`type: "thread"`): Make the code change, ask the user what to reply (or suggest a draft reply), and post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`.
-   - **Fix & comment** (`type: "comment"`): Make the code change, ask the user what to comment (or suggest a draft), and post a PR-level comment via `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`.
-   - **Reply & resolve** (`type: "thread"` only): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies` and resolve the thread via `gh api graphql` using `thread_id` (not `comment_id`).
-   - **Reply only** (`type: "thread"`): Ask the user what to reply (or suggest a draft reply). Then post the reply via `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`.
-   - **Comment only** (`type: "comment"`): Ask the user what to comment (or suggest a draft). Then post a PR-level comment via `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`.
+3. **Execute the chosen action** — code fixes and commits are applied immediately during the walkthrough. **GitHub API actions (reply, comment, resolve) are deferred** to Phase 4, after push. During this phase, confirm the reply/comment content with the user and queue it for later execution.
+   - **Fix in code**: Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit.
+   - **Fix & reply & resolve** (`type: "thread"` only): Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit. Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply and resolve for Phase 4.
+   - **Fix & reply** (`type: "thread"`): Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit. Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply for Phase 4.
+   - **Fix & comment** (`type: "comment"`): Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit. Ask the user what to comment (or suggest a draft) and confirm the content. Queue the comment for Phase 4.
+   - **Reply & resolve** (`type: "thread"` only): Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply and resolve for Phase 4.
+   - **Reply only** (`type: "thread"`): Ask the user what to reply (or suggest a draft reply) and confirm the content. Queue the reply for Phase 4.
+   - **Comment only** (`type: "comment"`): Ask the user what to comment (or suggest a draft) and confirm the content. Queue the comment for Phase 4.
    - **Skip**: Do nothing, proceed to the next comment.
-   - **Other (free-text)**: Follow the user's custom instructions for this comment. This may combine multiple actions or request something not covered by the predefined options.
+   - **Other (free-text)**: Follow the user's custom instructions for this comment. Code fixes are committed immediately; any GitHub API actions are queued for Phase 4.
 
 4. After completing the action (or skipping), move to the next comment and repeat.
 
-## Phase 4: Final Summary
+## Phase 4: Push & Execute Queued Actions
 
-After all comments have been walked through, show a final summary:
+After all comments have been walked through:
+
+1. **Show the triage summary**:
+
+```
+## Triage Summary
+
+| # | Category | Author | Assessment | Action |
+|---|----------|--------|------------|--------|
+| 1 | <category> | @<author> | <assessment> | Fixed (committed) & reply & resolve (queued) / Fixed (committed) / Skipped / ... |
+| 2 | ... | ... | ... | ... |
+
+Pending GitHub actions: <n> replies, <n> comments, <n> resolves
+```
+
+2. **Ask: "Push?"** — If the user agrees, push to the remote. If the user declines, skip this step.
+
+3. **Ask: "Execute queued replies/comments/resolves?"** — Show the list of pending GitHub API actions. If the user agrees, execute them all:
+   - For thread replies: `gh api` to `POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies`
+   - For PR-level comments: `gh api` to `POST /repos/{owner}/{repo}/issues/{pull_number}/comments`
+   - For thread resolves: `gh api graphql` using `thread_id` (not `comment_id`)
+   - If the user declines, show the pending actions list so they can execute manually later.
+
+4. **Show the final result**:
 
 ```
 ## Triage Complete
 
 | # | Category | Author | Assessment | Action Taken |
 |---|----------|--------|------------|--------------|
-| 1 | <category> | @<author> | <assessment> | Fixed / Fixed & replied & resolved / Fixed & replied / Fixed & commented / Replied & resolved / Replied / Commented / Skipped |
+| 1 | <category> | @<author> | <assessment> | Fixed & replied & resolved / Fixed / Skipped / ... |
 | 2 | ... | ... | ... | ... |
 
 - Fixed: n
-- Fixed & replied & resolved: n
-- Fixed & replied: n
-- Fixed & commented: n
-- Replied & resolved: n
-- Replied only: n
-- Commented only: n
+- Replied/Commented: n
+- Resolved: n
 - Skipped: n
 ```
 
