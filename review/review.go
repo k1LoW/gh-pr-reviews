@@ -194,12 +194,14 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 		resolved := t.IsResolved
 		category := defaultCategory
 		reason := ""
+		classifiedResolved := false
 		if ok {
 			category = normalizeCategory(classified.Category)
 			reason = classified.Reason
-			if !resolved {
-				resolved = normalizeResolved(category, classified.IsResolved)
-			}
+			classifiedResolved = classified.IsResolved
+		}
+		if !resolved {
+			resolved = normalizeResolved(category, classifiedResolved)
 		}
 
 		if !showAll && resolved {
@@ -247,9 +249,10 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 		reason := ""
 		if ok {
 			category = normalizeCategory(classified.Category)
-			resolved = normalizeResolved(category, classified.IsResolved)
 			reason = classified.Reason
+			resolved = classified.IsResolved
 		}
+		resolved = normalizeResolved(category, resolved)
 
 		if !showAll && resolved {
 			continue
