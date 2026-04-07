@@ -113,6 +113,60 @@ func TestAnalyzeGitHubResolvedOverrides(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUnclassifiedDefaultsToResolvedInformational(t *testing.T) {
+	data := &Data{
+		Threads: []Thread{
+			{
+				ID:   "T1",
+				Path: "main.go",
+				Comments: []Comment{
+					{ID: "C1", Body: "Some comment", Author: "alice", CreatedAt: time.Now(), URL: "https://example.com/1"},
+				},
+			},
+		},
+		PRComments: []Comment{
+			{ID: "PC1", Body: "FYI", Author: "bob", CreatedAt: time.Now(), URL: "https://example.com/2"},
+		},
+	}
+
+	// Classifier returns empty results (no matching thread/comment IDs).
+	mock := &mockClassifier{
+		output: &ClassifyOutput{
+			Threads:    []ClassifyOutputThread{},
+			PRComments: []ClassifyOutputPRComment{},
+		},
+	}
+
+	// With showAll=false, unclassified items should default to informational+resolved and be filtered out.
+	results, err := Analyze(context.Background(), data, mock, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results (unclassified defaults to resolved informational), got %d", len(results))
+		for _, r := range results {
+			t.Logf("  category=%s resolved=%v", r.Category, r.Resolved)
+		}
+	}
+
+	// With showAll=true, they should appear as informational+resolved.
+	results, err = Analyze(context.Background(), data, mock, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results with showAll, got %d", len(results))
+	}
+	for _, r := range results {
+		if r.Category != "informational" {
+			t.Errorf("expected category informational, got %s", r.Category)
+		}
+		if !r.Resolved {
+			t.Errorf("expected resolved=true for informational, got false")
+		}
+	}
+}
+
 func TestBuildClassifyInput(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	line := 42
