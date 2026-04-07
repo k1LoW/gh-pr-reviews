@@ -182,7 +182,7 @@ func normalizeResolved(category string, resolved bool) bool {
 }
 
 func buildResults(data *Data, output *ClassifyOutput, showAll bool) []UnresolvedComment {
-	var results []UnresolvedComment
+	results := []UnresolvedComment{}
 
 	threadMap := make(map[string]*ClassifyOutputThread, len(output.Threads))
 	for i := range output.Threads {

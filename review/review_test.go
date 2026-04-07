@@ -2,6 +2,7 @@ package review
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 )
@@ -26,6 +27,60 @@ func TestAnalyzeEmpty(t *testing.T) {
 	}
 	if len(results) != 0 {
 		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestAnalyzeReturnsEmptySliceNotNil(t *testing.T) {
+	tests := []struct {
+		name string
+		data *Data
+		mock *mockClassifier
+	}{
+		{
+			name: "no threads or comments",
+			data: &Data{},
+			mock: &mockClassifier{output: &ClassifyOutput{}},
+		},
+		{
+			name: "all resolved by classifier",
+			data: &Data{
+				Threads: []Thread{
+					{
+						ID:   "T1",
+						Path: "main.go",
+						Comments: []Comment{
+							{ID: "C1", Body: "LGTM", Author: "alice", CreatedAt: time.Now(), URL: "https://example.com/1"},
+						},
+					},
+				},
+			},
+			mock: &mockClassifier{
+				output: &ClassifyOutput{
+					Threads: []ClassifyOutputThread{
+						{ThreadID: "T1", Category: "approval", IsResolved: true, Reason: "Approval"},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			results, err := Analyze(context.Background(), tt.data, tt.mock, false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if results == nil {
+				t.Fatal("expected non-nil empty slice, got nil")
+			}
+			b, err := json.Marshal(results)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(b) != "[]" {
+				t.Errorf("expected JSON output to be [], got %s", string(b))
+			}
+		})
 	}
 }
 
