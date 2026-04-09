@@ -48,7 +48,7 @@ Use `--json` to get machine-readable JSON output:
 $ gh pr-reviews 123 --json
 ```
 
-There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, `commit_id`, and `diff_hunk` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying.
+There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, `commit_id`, and `diff_hunk` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying. `replies` contains follow-up comments in a thread (omitted when empty).
 
 ```json
 [
@@ -65,7 +65,15 @@ There are two types: `thread` (inline review thread) and `comment` (PR-level com
     "url": "https://github.com/owner/repo/pull/123#discussion_r123456",
     "category": "suggestion",
     "resolved": false,
-    "reason": "No follow-up addressing this feedback"
+    "reason": "No follow-up addressing this feedback",
+    "replies": [
+      {
+        "author": "author",
+        "body": "I'll fix this in the next commit",
+        "created_at": "2025-01-02T12:00:00Z",
+        "url": "https://github.com/owner/repo/pull/123#discussion_r123457"
+      }
+    ]
   },
   {
     "comment_id": 2815800000,

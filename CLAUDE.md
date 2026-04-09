@@ -19,10 +19,10 @@ gh-pr-reviews is a GitHub CLI (`gh`) extension that identifies unresolved review
 The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL API (fetch reviews) → Copilot SDK (classify comments) → colored Markdown output to stdout (or JSON with `--json`).
 
 - `main.go` — Entry point, delegates to `cmd.Execute()`
-- `cmd/root.go` — Cobra root command. Resolves PR context by shelling out to `gh pr view`, orchestrates the full pipeline with spinner progress. Flags: `-R`, `-a`, `--json`, `--copilot-model`, `--verbose`
+- `cmd/root.go` — Cobra root command. Resolves PR context by shelling out to `gh pr view`, orchestrates the full pipeline with spinner progress. Flags: `-R`, `-a`, `--json`, `-w`/`--width`, `--copilot-model`, `--verbose`
 - `output/markdown.go` — Colored Markdown-style terminal output using `termenv`. Groups threads by file path, renders PR comments separately. Colors follow GitHub Copilot brand palette and auto-degrade based on terminal capability (`NO_COLOR`, non-TTY)
 - `gh/gh.go` — GitHub GraphQL client using `go-github-client` factory for auth and `shurcooL/githubv4` for queries. Fetches `reviewThreads` (inline, with `databaseId` for REST API compatibility) and `comments` (PR-level) with cursor-based pagination
-- `review/review.go` — Core data types (`Thread`, `Comment`, `Data`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has two types: `thread` (with `thread_id`) and `comment` (without `thread_id`), both with `comment_id` (REST API numeric ID)
+- `review/review.go` — Core data types (`Thread`, `Comment`, `Data`, `ReplyComment`, `UnresolvedComment`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has two types: `thread` (with `thread_id`) and `comment` (without `thread_id`), both with `comment_id` (REST API numeric ID). Threads include `replies` (follow-up comments after the first)
 - `review/copilot.go` — `CopilotClassifier` implementation using the Copilot SDK. Sends all PR comments as structured JSON in a single request, receives classification+resolution results. Includes copilot CLI version check (>= 0.0.411 required)
 - `version/version.go` — Version constant for tagpr
 
@@ -30,8 +30,24 @@ The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL 
 
 - **CommentClassifier interface** in `review/review.go` enables testing with mock classifiers without requiring Copilot
 - **GitHub-resolved threads always win**: if `isResolved` is true on GitHub, the thread is treated as resolved regardless of Copilot's classification
+- **Category normalization**: unrecognized categories default to `informational`. `approval` and `informational` are always forced to resolved regardless of classifier output
 - **Single Copilot call**: all comments are sent as one structured JSON payload to minimize API calls
 - PR identification delegates to `gh pr view` (supports PR number, URL, or current branch)
+
+## Testing
+
+Tests use table-driven patterns with a `mockClassifier` that implements `CommentClassifier`, so tests run without Copilot. Key test files:
+- `review/review_test.go` — Analyze logic, resolution filtering, normalization
+- `review/copilot_test.go` — Copilot response parsing, version comparison
+- `output/markdown_test.go` — Markdown rendering, word wrapping
+
+## Developing from Source
+
+```bash
+go build .
+gh extension remove pr-reviews    # if previously installed
+gh extension install .
+```
 
 ## Linting Rules
 
