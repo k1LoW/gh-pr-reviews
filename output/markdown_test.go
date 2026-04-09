@@ -219,6 +219,69 @@ func TestRenderMarkdownNoLine(t *testing.T) {
 	}
 }
 
+func TestRenderMarkdownReplies(t *testing.T) {
+	line := 42
+	results := []review.UnresolvedComment{
+		{
+			ThreadID: "t1",
+			Type:     "thread",
+			Path:     "src/main.go",
+			Line:     &line,
+			Author:   "alice",
+			Body:     "Why is this needed?",
+			URL:      "https://github.com/example/1",
+			Category: "question",
+			Resolved: false,
+			Replies: []review.ReplyComment{
+				{
+					Author: "bob",
+					Body:   "It handles the edge case for empty input.",
+					URL:    "https://github.com/example/2",
+				},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
+	out := buf.String()
+
+	if !strings.Contains(out, "@bob") {
+		t.Error("missing reply author @bob")
+	}
+	if !strings.Contains(out, "edge case for empty input") {
+		t.Error("missing reply body")
+	}
+	if !strings.Contains(out, ">") {
+		t.Error("missing blockquote prefix for reply")
+	}
+}
+
+func TestRenderMarkdownNoReplies(t *testing.T) {
+	results := []review.UnresolvedComment{
+		{
+			Type:     "comment",
+			Author:   "alice",
+			Body:     "Just a comment",
+			URL:      "https://github.com/example/1",
+			Category: "suggestion",
+			Resolved: false,
+		},
+	}
+
+	var buf bytes.Buffer
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
+	out := buf.String()
+
+	// Should not contain reply blockquote markers beyond the body.
+	lines := strings.Split(out, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "> ") {
+			t.Errorf("unexpected blockquote line in output without replies: %q", line)
+		}
+	}
+}
+
 func TestRenderMarkdownWordWrap(t *testing.T) {
 	results := []review.UnresolvedComment{
 		{
