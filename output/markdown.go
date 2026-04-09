@@ -151,7 +151,7 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, w
 		fmt.Fprintln(w)
 		replyHeader := p.String(fmt.Sprintf("> **@%s**:", r.Author)).Faint()
 		fmt.Fprintln(w, replyHeader)
-		for _, line := range strings.Split(wordwrap.String(r.Body, width-2), "\n") {
+		for _, line := range strings.Split(wordwrap.String(r.Body, max(width-2, 1)), "\n") {
 			fmt.Fprintln(w, p.String("> "+line).Faint())
 		}
 	}
