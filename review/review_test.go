@@ -222,6 +222,88 @@ func TestAnalyzeUnclassifiedDefaultsToResolvedInformational(t *testing.T) {
 	}
 }
 
+func TestAnalyzePopulatesReplies(t *testing.T) {
+	now := time.Now()
+	data := &Data{
+		Threads: []Thread{
+			{
+				ID:   "T1",
+				Path: "main.go",
+				Comments: []Comment{
+					{ID: "C1", Body: "Why is this needed?", Author: "alice", CreatedAt: now, URL: "https://example.com/1"},
+					{ID: "C2", Body: "It handles the edge case for empty input.", Author: "bob", CreatedAt: now.Add(time.Hour), URL: "https://example.com/2"},
+				},
+			},
+		},
+	}
+
+	mock := &mockClassifier{
+		output: &ClassifyOutput{
+			Threads: []ClassifyOutputThread{
+				{ThreadID: "T1", Category: "question", IsResolved: false, Reason: "Unanswered question"},
+			},
+		},
+	}
+
+	results, err := Analyze(context.Background(), data, mock, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+
+	r := results[0]
+	if r.Author != "alice" {
+		t.Errorf("expected author alice, got %s", r.Author)
+	}
+	if r.Body != "Why is this needed?" {
+		t.Errorf("expected first comment body, got %s", r.Body)
+	}
+	if len(r.Replies) != 1 {
+		t.Fatalf("expected 1 reply, got %d", len(r.Replies))
+	}
+	if r.Replies[0].Author != "bob" {
+		t.Errorf("expected reply author bob, got %s", r.Replies[0].Author)
+	}
+	if r.Replies[0].Body != "It handles the edge case for empty input." {
+		t.Errorf("expected reply body, got %s", r.Replies[0].Body)
+	}
+}
+
+func TestAnalyzeNoRepliesForSingleComment(t *testing.T) {
+	data := &Data{
+		Threads: []Thread{
+			{
+				ID:   "T1",
+				Path: "main.go",
+				Comments: []Comment{
+					{ID: "C1", Body: "Fix this", Author: "alice", CreatedAt: time.Now(), URL: "https://example.com/1"},
+				},
+			},
+		},
+	}
+
+	mock := &mockClassifier{
+		output: &ClassifyOutput{
+			Threads: []ClassifyOutputThread{
+				{ThreadID: "T1", Category: "suggestion", IsResolved: false, Reason: "Not fixed"},
+			},
+		},
+	}
+
+	results, err := Analyze(context.Background(), data, mock, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].Replies != nil {
+		t.Errorf("expected nil replies for single comment, got %v", results[0].Replies)
+	}
+}
+
 func TestBuildClassifyInput(t *testing.T) {
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	line := 42

@@ -16,6 +16,8 @@ const minCopilotVersion = "0.0.411"
 
 const systemPrompt = `You are a code review comment classifier. You analyze PR review comments and classify each one.
 
+IMPORTANT: Each thread contains a "comments" array listing the full conversation in chronological order. The first comment is the original review comment; subsequent comments are replies. You MUST read ALL comments in every thread before classifying. The conversation flow is critical for determining resolution status.
+
 For each comment or thread, determine:
 1. **category**: You MUST always choose exactly one of: "suggestion", "nitpick", "issue", "question", "approval", "informational". Never return any other value.
    - suggestion: Code change proposals or improvement requests ("you should fix this", "this pattern would be better")
@@ -26,11 +28,13 @@ For each comment or thread, determine:
    - informational: FYI, context, or background information. If a comment does not clearly fit into "suggestion", "nitpick", "issue", or "question", classify it as "informational"
 
 2. **is_resolved**: Whether the feedback has been addressed. Only evaluate resolution for "suggestion", "nitpick", "issue", and "question" categories. For "approval" and "informational", always set is_resolved to true.
-   - For "suggestion", "nitpick", and "issue": Look at follow-up comments in the thread for evidence of resolution (author saying "fixed", "done", "updated", etc.)
-   - For "question": Look at follow-up comments for evidence that the question has been answered. If the question remains unanswered, set is_resolved to false.
+   - For threads with multiple comments, you MUST analyze the ENTIRE conversation to determine resolution:
+     - For "suggestion", "nitpick", and "issue": A reply from the PR author acknowledging the feedback (e.g., "fixed", "done", "updated", explaining the change, or providing a valid justification for the current approach) indicates resolution.
+     - For "question": Any substantive reply that answers the question indicates resolution. This includes explanations, clarifications, or references to relevant context. A question that has received a meaningful answer MUST be marked as resolved.
    - If is_resolved_on_github is true, always consider it resolved regardless of comment content.
+   - Only set is_resolved to false when there is NO meaningful reply addressing the concern, or when there is an ongoing unresolved disagreement after the latest reply.
 
-3. **reason**: Brief explanation of your classification and resolution decision.
+3. **reason**: Brief explanation of your classification and resolution decision. When a thread has multiple comments, reference the relevant reply that influenced your decision.
 
 You will receive a JSON object with "threads" (inline review threads) and "pr_comments" (top-level PR comments).
 

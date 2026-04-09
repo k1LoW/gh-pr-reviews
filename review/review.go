@@ -93,21 +93,30 @@ type CommentClassifier interface {
 	Close()
 }
 
+// ReplyComment represents a follow-up comment in a thread.
+type ReplyComment struct {
+	Author    string    `json:"author"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"created_at"`
+	URL       string    `json:"url"`
+}
+
 // UnresolvedComment is the JSON output structure for CLI results.
 type UnresolvedComment struct {
-	ThreadID  string `json:"thread_id,omitempty"`
-	CommentID int64  `json:"comment_id"`
-	Type      string `json:"type"`
-	Path      string `json:"path,omitempty"`
-	Line      *int   `json:"line,omitempty"`
-	CommitID  string `json:"commit_id,omitempty"`
-	DiffHunk  string `json:"diff_hunk,omitempty"`
-	Author    string `json:"author"`
-	Body      string `json:"body"`
-	URL       string `json:"url"`
-	Category  string `json:"category"`
-	Resolved  bool   `json:"resolved"`
-	Reason    string `json:"reason"`
+	ThreadID  string         `json:"thread_id,omitempty"`
+	CommentID int64          `json:"comment_id"`
+	Type      string         `json:"type"`
+	Path      string         `json:"path,omitempty"`
+	Line      *int           `json:"line,omitempty"`
+	CommitID  string         `json:"commit_id,omitempty"`
+	DiffHunk  string         `json:"diff_hunk,omitempty"`
+	Author    string         `json:"author"`
+	Body      string         `json:"body"`
+	URL       string         `json:"url"`
+	Category  string         `json:"category"`
+	Resolved  bool           `json:"resolved"`
+	Reason    string         `json:"reason"`
+	Replies   []ReplyComment `json:"replies,omitempty"`
 }
 
 // Analyze classifies and filters review comments, returning unresolved ones (or all if showAll is true).
@@ -220,6 +229,17 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 			diffHunk = t.Comments[0].DiffHunk
 		}
 
+		// Collect replies (all comments after the first).
+		var replies []ReplyComment
+		for _, rc := range t.Comments[1:] {
+			replies = append(replies, ReplyComment{
+				Author:    rc.Author,
+				Body:      rc.Body,
+				CreatedAt: rc.CreatedAt,
+				URL:       rc.URL,
+			})
+		}
+
 		results = append(results, UnresolvedComment{
 			ThreadID:  t.ID,
 			CommentID: commentID,
@@ -234,6 +254,7 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 			Category:  category,
 			Resolved:  resolved,
 			Reason:    reason,
+			Replies:   replies,
 		})
 	}
 

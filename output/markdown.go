@@ -146,6 +146,16 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, w
 	// Body.
 	fmt.Fprintln(w, wordwrap.String(c.Body, width))
 
+	// Replies.
+	for _, r := range c.Replies {
+		fmt.Fprintln(w)
+		replyHeader := p.String(fmt.Sprintf("> **@%s**:", r.Author)).Faint()
+		fmt.Fprintln(w, replyHeader)
+		for _, line := range strings.Split(wordwrap.String(r.Body, width-2), "\n") {
+			fmt.Fprintln(w, p.String("> "+line).Faint())
+		}
+	}
+
 }
 
 func categoryColor(category string) string {
