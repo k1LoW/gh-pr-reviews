@@ -20,10 +20,11 @@ compatibility: Requires gh CLI and gh-pr-reviews extension (gh extension install
    - `commit_id`, `path`, `line`, `diff_hunk` (only for `type: "thread"`): file location and diff context
    - `category`: one of `suggestion`, `nitpick`, `issue`, `question`, `approval`, `informational`
    - `resolved` (bool), `reason` (string): resolution status and rationale
+   - `replies` (array, optional, only for `type: "thread"` with multiple comments): follow-up comments in the thread, each with `author`, `body`, `created_at`, `url`
 2. Check if PR metadata (number, title, url) is already available from conversation context. If not (e.g., when a PR number/URL is explicitly passed as argument), run `gh pr view [arg] --json number,title,url` to get it.
 3. For `type: "thread"` comments, use `path`, `line`, and `diff_hunk` from the JSON response to identify the exact file location. For `type: "comment"` (PR-level), there is no file location.
 4. Check code context for each comment. Leverage any existing conversation context first. Only fetch additional context via `gh pr diff` or file reads when necessary.
-5. Evaluate each comment against the code context. Classify as **Agree**, **Partially Agree**, or **Disagree** with a rationale and suggested action.
+5. Evaluate each comment against the code context. When a thread has `replies`, read the full conversation to understand whether the concern has already been discussed or partially addressed. Classify as **Agree**, **Partially Agree**, or **Disagree** with a rationale and suggested action.
 
 ## Phase 2: Summary Overview
 
