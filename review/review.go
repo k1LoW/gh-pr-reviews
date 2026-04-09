@@ -231,13 +231,15 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 
 		// Collect replies (all comments after the first).
 		var replies []ReplyComment
-		for _, rc := range t.Comments[1:] {
-			replies = append(replies, ReplyComment{
-				Author:    rc.Author,
-				Body:      rc.Body,
-				CreatedAt: rc.CreatedAt,
-				URL:       rc.URL,
-			})
+		if len(t.Comments) > 1 {
+			for _, rc := range t.Comments[1:] {
+				replies = append(replies, ReplyComment{
+					Author:    rc.Author,
+					Body:      rc.Body,
+					CreatedAt: rc.CreatedAt,
+					URL:       rc.URL,
+				})
+			}
 		}
 
 		results = append(results, UnresolvedComment{
