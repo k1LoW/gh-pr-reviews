@@ -98,14 +98,14 @@ func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInpu
 	unsubscribe := c.session.On(func(event copilot.SessionEvent) {
 		switch event.Type {
 		case "assistant.message":
-			if event.Data.Content != nil {
-				responseContent = *event.Data.Content
+			if d, ok := event.Data.(*copilot.AssistantMessageData); ok {
+				responseContent = d.Content
 			}
 		case "session.idle":
 			close(done)
 		case "error":
-			if event.Data.Content != nil {
-				eventErr = fmt.Errorf("copilot error: %s", *event.Data.Content)
+			if d, ok := event.Data.(*copilot.SessionErrorData); ok {
+				eventErr = fmt.Errorf("copilot error: %s", d.Message)
 			}
 			select {
 			case <-done:
