@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.10.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.0...v0.10.1) - 2026-04-15
+### Dependency Updates ⬆️
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/42
+
 ## [v0.10.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.9.0...v0.10.0) - 2026-04-09
 ### Breaking Changes 🛠
 - fix: improve thread conversation analysis for resolution detection by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/40
