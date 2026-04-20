@@ -147,5 +147,6 @@ Pending GitHub actions: <n> replies, <n> comments, <n> resolves
 - When the user selects a "Fix" action, this is an implicit request to commit. Draft a commit message, confirm it with the user, and commit. Do NOT push unless explicitly confirmed in Phase 4.
 - When fixing code, make minimal changes that address the review comment.
 - When suggesting reply drafts, keep them concise and professional.
+- When drafting a PR-level comment for `type: "comment"`, always include a link to the original comment (`url` from JSON) at the beginning of the reply body (e.g., `> Re: <url>\n\n<reply body>`). PR-level comments have no threading, so without a link readers cannot tell which comment the reply addresses.
 - If code context is unclear, search the codebase to verify before making a judgment.
 - Prefer `gh` commands for GitHub data.
