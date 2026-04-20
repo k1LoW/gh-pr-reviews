@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.10.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.1...v0.10.2) - 2026-04-20
+### Other Changes
+- Include link to original comment in PR-level reply drafts by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/44
+
 ## [v0.10.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.0...v0.10.1) - 2026-04-15
 ### Dependency Updates ⬆️
 - chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/42
