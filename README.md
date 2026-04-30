@@ -153,6 +153,12 @@ You can install it via [skills.sh](https://skills.sh/):
 $ npx skills add k1LoW/gh-pr-reviews
 ```
 
+Or via [`gh skill`](https://cli.github.com/manual/gh_skill) (preview):
+
+```bash
+$ gh skill install k1LoW/gh-pr-reviews triage-pr-reviews
+```
+
 Or manually copy [`skills/triage-pr-reviews/SKILL.md`](skills/triage-pr-reviews/SKILL.md) to a location recognized by your agent (e.g., `.claude/skills/` for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), `.github/skills/` for [GitHub Copilot Coding Agent](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent), or wherever your agent discovers skills).
 
 ## Contributing
