@@ -23,7 +23,7 @@ The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL 
 - `output/markdown.go` — Colored Markdown-style terminal output using `termenv`. Groups threads by file path, renders PR comments separately. Colors follow GitHub Copilot brand palette and auto-degrade based on terminal capability (`NO_COLOR`, non-TTY)
 - `gh/gh.go` — GitHub GraphQL client using `go-github-client` factory for auth and `shurcooL/githubv4` for queries. Fetches `reviewThreads` (inline, with `databaseId` for REST API compatibility) and `comments` (PR-level) with cursor-based pagination
 - `review/review.go` — Core data types (`Thread`, `Comment`, `Data`, `ReplyComment`, `UnresolvedComment`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has two types: `thread` (with `thread_id`) and `comment` (without `thread_id`), both with `comment_id` (REST API numeric ID). Threads include `replies` (follow-up comments after the first)
-- `review/copilot.go` — `CopilotClassifier` implementation using the Copilot SDK. Sends all PR comments as structured JSON in a single request, receives classification+resolution results. Includes copilot CLI version check (>= 0.0.411 required)
+- `review/copilot.go` — `CopilotClassifier` implementation using the Copilot SDK. Sends all PR comments as structured JSON in a single request, receives classification+resolution results. Includes copilot CLI version check (>= 1.0.51 required)
 - `version/version.go` — Version constant for tagpr
 
 ### Key Design Decisions
@@ -55,7 +55,7 @@ golangci-lint with these enabled linters: errorlint, godot, gosec, misspell (US 
 
 ## Prerequisites
 
-- GitHub Copilot CLI >= 0.0.411 must be installed (`copilot --version` to check, `copilot update` to upgrade)
+- GitHub Copilot CLI >= 1.0.51 must be installed (`copilot --version` to check, `copilot update` to upgrade)
 
 ## Release Process
 
