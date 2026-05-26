@@ -12,7 +12,7 @@ import (
 	copilot "github.com/github/copilot-sdk/go"
 )
 
-const minCopilotVersion = "0.0.411"
+const minCopilotVersion = "1.0.51"
 
 const systemPrompt = `You are a code review comment classifier. You analyze PR review comments and classify each one.
 
@@ -96,14 +96,14 @@ func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInpu
 	var eventErr error
 
 	unsubscribe := c.session.On(func(event copilot.SessionEvent) {
-		switch event.Type {
-		case "assistant.message":
+		switch event.Type() {
+		case copilot.SessionEventTypeAssistantMessage:
 			if d, ok := event.Data.(*copilot.AssistantMessageData); ok {
 				responseContent = d.Content
 			}
-		case "session.idle":
+		case copilot.SessionEventTypeSessionIdle:
 			close(done)
-		case "error":
+		case copilot.SessionEventTypeSessionError:
 			if d, ok := event.Data.(*copilot.SessionErrorData); ok {
 				eventErr = fmt.Errorf("copilot error: %s", d.Message)
 			}

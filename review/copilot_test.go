@@ -86,8 +86,8 @@ func TestParseCopilotVersion(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"GitHub Copilot CLI 0.0.410.\n", "0.0.410"},
-		{"GitHub Copilot CLI 0.0.411.\nRun 'copilot update' to check for updates.\n", "0.0.411"},
+		{"GitHub Copilot CLI 1.0.50.\n", "1.0.50"},
+		{"GitHub Copilot CLI 1.0.51.\nRun 'copilot update' to check for updates.\n", "1.0.51"},
 		{"1.2.3", "1.2.3"},
 		{"no version here", ""},
 	}
