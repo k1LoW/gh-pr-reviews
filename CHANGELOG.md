@@ -1,5 +1,17 @@
 # Changelog
 
+## [v0.11.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.2...v0.11.0) - 2026-06-04
+
+### New Features 🎉
+- fix: support Copilot CLI v1.0.51 by @lemonadern in https://github.com/k1LoW/gh-pr-reviews/pull/52
+### Dependency Updates ⬆️
+- chore(deps): bump the dependencies group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/47
+- chore(deps): bump github.com/github/copilot-sdk/go from 0.2.2 to 0.3.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/48
+- chore(deps): bump golang.org/x/term from 0.42.0 to 0.43.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/51
+- chore(deps): bump Songmu/tagpr from 1.18.3 to 1.19.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/50
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/53
+- chore(deps): bump the dependencies group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/54
+
 ## [v0.10.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.1...v0.10.2) - 2026-04-20
 ### Other Changes
 - Include link to original comment in PR-level reply drafts by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/44
