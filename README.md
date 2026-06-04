@@ -130,7 +130,7 @@ $ gh extension install k1LoW/gh-pr-reviews
 
 ## Prerequisites
 
-- [GitHub Copilot CLI](https://docs.github.com/en/copilot) >= 0.0.411 (`copilot --version` to check, `copilot update` to upgrade)
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot) >= 1.0.51 (`copilot --version` to check, `copilot update` to upgrade)
 
 ## Command Line Options
 

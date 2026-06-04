@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	github.com/briandowns/spinner v1.23.2
-	github.com/github/copilot-sdk/go v0.3.0
+	github.com/github/copilot-sdk/go v1.0.0-beta.7
 	github.com/k1LoW/go-github-client/v79 v79.0.21
 	github.com/mattn/go-colorable v0.1.14
 	github.com/muesli/reflow v0.3.0
