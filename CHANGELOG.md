@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.11.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.11.0...v0.11.1) - 2026-06-17
+
+### Dependency Updates ⬆️
+- chore(deps): bump golang.org/x/term from 0.43.0 to 0.44.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/55
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.0 to 1.0.1 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/57
+
 ## [v0.11.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.10.2...v0.11.0) - 2026-06-04
 
 ### New Features 🎉
