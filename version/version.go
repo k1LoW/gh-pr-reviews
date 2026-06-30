@@ -4,4 +4,4 @@ package version
 const Name string = "gh-pr-reviews"
 
 // Version is the version of the application.
-var Version = "0.11.1"
+var Version = "0.11.2"
