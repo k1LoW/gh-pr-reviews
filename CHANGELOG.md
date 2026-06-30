@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.11.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.11.1...v0.11.2) - 2026-06-30
+
+### Dependency Updates ⬆️
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/59
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.1 to 1.0.2 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/58
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.2 to 1.0.4 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/62
+- chore(deps): bump actions/setup-go from 6.4.0 to 6.5.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/61
+
 ## [v0.11.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.11.0...v0.11.1) - 2026-06-17
 
 ### Dependency Updates ⬆️
