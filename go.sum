@@ -15,8 +15,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.7.0 h1:DkWD4oS2D8LGGgTQ6IvwJJXSL5Vp2ffcQg58nFV38Ys=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
-github.com/github/copilot-sdk/go v1.0.4 h1:QzbL9nf3FS1wFXPm/j3IpGulHZ3SDAbIiPSWSm/0C6s=
-github.com/github/copilot-sdk/go v1.0.4/go.mod h1:+Qo8WkaIJEb1aqRwzrO49Z9nHWfQcF39iro4fH+qNYQ=
+github.com/github/copilot-sdk/go v1.0.5 h1:NeIMkcWZ/YzDETCx26i9HIG8r1j0fYjYxU+pUJXaaQ8=
+github.com/github/copilot-sdk/go v1.0.5/go.mod h1:+Qo8WkaIJEb1aqRwzrO49Z9nHWfQcF39iro4fH+qNYQ=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
 github.com/go-logr/logr v1.4.3/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
