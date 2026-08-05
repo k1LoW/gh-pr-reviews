@@ -59,7 +59,7 @@ func RenderMarkdown(w io.Writer, results []review.UnresolvedComment, p *termenv.
 	var prComments []review.UnresolvedComment
 
 	for _, r := range results {
-		if r.Type == "thread" {
+		if r.Path != "" {
 			idx, ok := groupIdx[r.Path]
 			if !ok {
 				idx = len(groups)
@@ -127,7 +127,14 @@ func renderComment(w io.Writer, c review.UnresolvedComment, p *termenv.Output, w
 	// Author.
 	author := p.String("@" + c.Author).Bold()
 
-	fmt.Fprintf(w, "### %s %s — %s\n\n", cat, status, author)
+	// Suppressed comments have no thread on GitHub, so mark them to make clear
+	// they cannot be replied to or resolved.
+	origin := ""
+	if c.Type == "suppressed" {
+		origin = " " + p.String("[suppressed]").Faint().String()
+	}
+
+	fmt.Fprintf(w, "### %s %s%s — %s\n\n", cat, status, origin, author)
 
 	// Location line: line number + URL.
 	var parts []string

@@ -92,7 +92,7 @@ var rootCmd = &cobra.Command{
 			s.Stop()
 			return err
 		}
-		slog.Info("fetched review data", "threads", len(data.Threads), "pr_comments", len(data.PRComments))
+		slog.Info("fetched review data", "threads", len(data.Threads), "pr_comments", len(data.PRComments), "reviews", len(data.Reviews))
 
 		// Create Copilot classifier.
 		s.Suffix = " Starting Copilot..."

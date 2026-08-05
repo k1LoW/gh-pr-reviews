@@ -79,7 +79,28 @@ type prCommentsQuery struct {
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
-// FetchReviews fetches all review threads and PR comments for the given pull request.
+type reviewsQuery struct {
+	Repository struct {
+		PullRequest struct {
+			Reviews struct {
+				Nodes []struct {
+					ID          string
+					Body        string
+					Author      struct{ Login string }
+					SubmittedAt *time.Time
+					URL         string `graphql:"url"`
+				}
+				PageInfo struct {
+					HasNextPage bool
+					EndCursor   githubv4.String
+				}
+			} `graphql:"reviews(first: 100, after: $reviewCursor)"`
+		} `graphql:"pullRequest(number: $number)"`
+	} `graphql:"repository(owner: $owner, name: $repo)"`
+}
+
+// FetchReviews fetches all review threads, PR comments and review summary bodies
+// for the given pull request.
 func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number int) (*review.Data, error) {
 	data := &review.Data{}
 
@@ -152,6 +173,42 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 		}
 		cursor := q.Repository.PullRequest.Comments.PageInfo.EndCursor
 		commentCursor = &cursor
+	}
+
+	// Fetch review summary bodies with pagination.
+	var reviewCursor *githubv4.String
+	for {
+		var q reviewsQuery
+		variables := map[string]any{
+			"owner":        githubv4.String(owner),
+			"repo":         githubv4.String(repo),
+			"number":       githubv4.Int(int32(number)), //nolint:gosec
+			"reviewCursor": reviewCursor,
+		}
+		if err := c.v4.Query(ctx, &q, variables); err != nil {
+			return nil, fmt.Errorf("failed to fetch reviews: %w", err)
+		}
+		for _, node := range q.Repository.PullRequest.Reviews.Nodes {
+			// Reviews submitted with inline comments only carry no summary body.
+			if node.Body == "" {
+				continue
+			}
+			r := review.SubmittedReview{
+				ID:     node.ID,
+				Body:   node.Body,
+				Author: node.Author.Login,
+				URL:    node.URL,
+			}
+			if node.SubmittedAt != nil {
+				r.SubmittedAt = *node.SubmittedAt
+			}
+			data.Reviews = append(data.Reviews, r)
+		}
+		if !q.Repository.PullRequest.Reviews.PageInfo.HasNextPage {
+			break
+		}
+		cursor := q.Repository.PullRequest.Reviews.PageInfo.EndCursor
+		reviewCursor = &cursor
 	}
 
 	return data, nil

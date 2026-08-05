@@ -30,8 +30,9 @@ type Thread struct {
 
 // Data holds all review data for a PR.
 type Data struct {
-	Threads    []Thread  `json:"threads"`
-	PRComments []Comment `json:"pr_comments"`
+	Threads    []Thread          `json:"threads"`
+	PRComments []Comment         `json:"pr_comments"`
+	Reviews    []SubmittedReview `json:"reviews"`
 }
 
 // ClassifyInputThread is a thread entry sent to the classifier.
@@ -59,10 +60,22 @@ type ClassifyInputPRComment struct {
 	CreatedAt string `json:"created_at"`
 }
 
+// ClassifyInputSuppressed is a Copilot suppressed comment entry sent to the classifier.
+type ClassifyInputSuppressed struct {
+	ID        string `json:"id"`
+	Path      string `json:"path"`
+	Line      *int   `json:"line,omitempty"`
+	Author    string `json:"author"`
+	Body      string `json:"body"`
+	Snippet   string `json:"snippet,omitempty"`
+	CreatedAt string `json:"created_at"`
+}
+
 // ClassifyInput is the full input sent to the classifier.
 type ClassifyInput struct {
-	Threads    []ClassifyInputThread    `json:"threads"`
-	PRComments []ClassifyInputPRComment `json:"pr_comments"`
+	Threads    []ClassifyInputThread     `json:"threads"`
+	PRComments []ClassifyInputPRComment  `json:"pr_comments"`
+	Suppressed []ClassifyInputSuppressed `json:"suppressed_comments"`
 }
 
 // ClassifyOutputThread is a classified thread result.
@@ -81,10 +94,19 @@ type ClassifyOutputPRComment struct {
 	Reason     string `json:"reason"`
 }
 
+// ClassifyOutputSuppressed is a classified suppressed comment result.
+type ClassifyOutputSuppressed struct {
+	ID         string `json:"id"`
+	Category   string `json:"category"`
+	IsResolved bool   `json:"is_resolved"`
+	Reason     string `json:"reason"`
+}
+
 // ClassifyOutput is the full output from the classifier.
 type ClassifyOutput struct {
-	Threads    []ClassifyOutputThread    `json:"threads"`
-	PRComments []ClassifyOutputPRComment `json:"pr_comments"`
+	Threads    []ClassifyOutputThread     `json:"threads"`
+	PRComments []ClassifyOutputPRComment  `json:"pr_comments"`
+	Suppressed []ClassifyOutputSuppressed `json:"suppressed_comments"`
 }
 
 // CommentClassifier classifies review comments.
@@ -121,21 +143,23 @@ type UnresolvedComment struct {
 
 // Analyze classifies and filters review comments, returning unresolved ones (or all if showAll is true).
 func Analyze(ctx context.Context, data *Data, classifier CommentClassifier, showAll bool) ([]UnresolvedComment, error) {
-	if len(data.Threads) == 0 && len(data.PRComments) == 0 {
+	suppressed := ExtractSuppressedComments(data.Reviews)
+
+	if len(data.Threads) == 0 && len(data.PRComments) == 0 && len(suppressed) == 0 {
 		return []UnresolvedComment{}, nil
 	}
 
-	input := buildClassifyInput(data)
+	input := buildClassifyInput(data, suppressed)
 
 	output, err := classifier.ClassifyAll(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to classify comments: %w", err)
 	}
 
-	return buildResults(data, output, showAll), nil
+	return buildResults(data, suppressed, output, showAll), nil
 }
 
-func buildClassifyInput(data *Data) *ClassifyInput {
+func buildClassifyInput(data *Data, suppressed []SuppressedComment) *ClassifyInput {
 	input := &ClassifyInput{}
 
 	for _, t := range data.Threads {
@@ -165,6 +189,23 @@ func buildClassifyInput(data *Data) *ClassifyInput {
 		})
 	}
 
+	for _, s := range suppressed {
+		// Outdated entries are forced resolved below, so classifying them would
+		// only inflate the single Copilot request.
+		if s.IsOutdated {
+			continue
+		}
+		input.Suppressed = append(input.Suppressed, ClassifyInputSuppressed{
+			ID:        s.ID,
+			Path:      s.Path,
+			Line:      s.Line,
+			Author:    s.Author,
+			Body:      s.Body,
+			Snippet:   s.Snippet,
+			CreatedAt: s.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
 	return input
 }
 
@@ -190,7 +231,11 @@ func normalizeResolved(category string, resolved bool) bool {
 	}
 }
 
-func buildResults(data *Data, output *ClassifyOutput, showAll bool) []UnresolvedComment {
+// supersededReason explains why a suppressed comment from an older Copilot
+// review is reported as resolved.
+const supersededReason = "not listed in the latest Copilot review, so it is superseded"
+
+func buildResults(data *Data, suppressed []SuppressedComment, output *ClassifyOutput, showAll bool) []UnresolvedComment {
 	results := []UnresolvedComment{}
 
 	threadMap := make(map[string]*ClassifyOutputThread, len(output.Threads))
@@ -257,6 +302,45 @@ func buildResults(data *Data, output *ClassifyOutput, showAll bool) []Unresolved
 			Resolved:  resolved,
 			Reason:    reason,
 			Replies:   replies,
+		})
+	}
+
+	suppressedMap := make(map[string]*ClassifyOutputSuppressed, len(output.Suppressed))
+	for i := range output.Suppressed {
+		suppressedMap[output.Suppressed[i].ID] = &output.Suppressed[i]
+	}
+
+	for _, s := range suppressed {
+		category := defaultCategory
+		reason := ""
+		resolved := false
+		switch classified, ok := suppressedMap[s.ID]; {
+		case s.IsOutdated:
+			resolved = true
+			reason = supersededReason
+		case ok:
+			category = normalizeCategory(classified.Category)
+			reason = classified.Reason
+			resolved = normalizeResolved(category, classified.IsResolved)
+		default:
+			resolved = normalizeResolved(category, false)
+		}
+
+		if !showAll && resolved {
+			continue
+		}
+
+		results = append(results, UnresolvedComment{
+			Type:     "suppressed",
+			Path:     s.Path,
+			Line:     s.Line,
+			DiffHunk: s.Snippet,
+			Author:   s.Author,
+			Body:     s.Body,
+			URL:      s.URL,
+			Category: category,
+			Resolved: resolved,
+			Reason:   reason,
 		})
 	}
 
