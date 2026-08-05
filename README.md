@@ -48,7 +48,7 @@ Use `--json` to get machine-readable JSON output:
 $ gh pr-reviews 123 --json
 ```
 
-There are two types: `thread` (inline review thread) and `comment` (PR-level comment). `thread_id`, `path`, `line`, `commit_id`, and `diff_hunk` are only present for `thread` type. `comment_id` is the REST API comment ID, which can be used for replying. `replies` contains follow-up comments in a thread (omitted when empty).
+There are three types: `thread` (inline review thread), `comment` (PR-level comment), and `suppressed` (a finding Copilot listed in its review summary instead of posting inline, see [Suppressed comments](#suppressed-comments)). `thread_id`, `commit_id`, and `replies` are only present for `thread` type. `path`, `line`, and `diff_hunk` are present for `thread` and `suppressed` types. `comment_id` is the REST API comment ID, which can be used for replying, and is `0` for `suppressed`. `replies` contains follow-up comments in a thread (omitted when empty).
 
 ```json
 [
@@ -84,9 +84,30 @@ There are two types: `thread` (inline review thread) and `comment` (PR-level com
     "category": "suggestion",
     "resolved": false,
     "reason": "No follow-up addressing this feedback"
+  },
+  {
+    "comment_id": 0,
+    "type": "suppressed",
+    "path": "src/handler.go",
+    "line": 87,
+    "diff_hunk": "\tfile, err := os.Open(dir)\n\tif err != nil {",
+    "author": "copilot-pull-request-reviewer",
+    "body": "This switch has no default case. Treat unknown values like ResultUnknown.",
+    "url": "https://github.com/owner/repo/pull/123#pullrequestreview-123456",
+    "category": "issue",
+    "resolved": false,
+    "reason": "Listed in the latest Copilot review and not addressed"
   }
 ]
 ```
+
+### Suppressed comments
+
+GitHub Copilot does not post every finding as an inline review comment. Low-confidence ones are collapsed into a `Suppressed comments` section of the review summary body, where they are invisible to the review threads API and easy to miss.
+
+`gh pr-reviews` parses that section and reports each entry individually as `type: "suppressed"`, grouped under its file path just like an inline thread. These entries have no review thread on GitHub, so they cannot be replied to or resolved — `thread_id` is absent and `comment_id` is `0`. The `url` points at the review that contained them.
+
+Copilot re-emits the full list of still-relevant findings on every re-review, so only the newest review reflects the current code. Entries that appear only in older reviews are reported as resolved and are therefore hidden unless `-a` is given.
 
 ### Comment Categories
 

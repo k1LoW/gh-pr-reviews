@@ -21,8 +21,9 @@ The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL 
 - `main.go` — Entry point, delegates to `cmd.Execute()`
 - `cmd/root.go` — Cobra root command. Resolves PR context by shelling out to `gh pr view`, orchestrates the full pipeline with spinner progress. Flags: `-R`, `-a`, `--json`, `-w`/`--width`, `--copilot-model`, `--verbose`
 - `output/markdown.go` — Colored Markdown-style terminal output using `termenv`. Groups threads by file path, renders PR comments separately. Colors follow GitHub Copilot brand palette and auto-degrade based on terminal capability (`NO_COLOR`, non-TTY)
-- `gh/gh.go` — GitHub GraphQL client using `go-github-client` factory for auth and `shurcooL/githubv4` for queries. Fetches `reviewThreads` (inline, with `databaseId` for REST API compatibility) and `comments` (PR-level) with cursor-based pagination
-- `review/review.go` — Core data types (`Thread`, `Comment`, `Data`, `ReplyComment`, `UnresolvedComment`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has two types: `thread` (with `thread_id`) and `comment` (without `thread_id`), both with `comment_id` (REST API numeric ID). Threads include `replies` (follow-up comments after the first)
+- `gh/gh.go` — GitHub GraphQL client using `go-github-client` factory for auth and `shurcooL/githubv4` for queries. Fetches `reviewThreads` (inline, with `databaseId` for REST API compatibility), `comments` (PR-level), and `reviews` (review summary bodies, skipping empty ones) with cursor-based pagination
+- `review/review.go` — Core data types (`Thread`, `Comment`, `Data`, `ReplyComment`, `UnresolvedComment`), `CommentClassifier` interface, and `Analyze` function that builds classifier input, calls the classifier, and filters results based on resolution status. Output has three types: `thread` (with `thread_id`), `comment`, and `suppressed`. `comment_id` is the REST API numeric ID (`0` for `suppressed`). Threads include `replies` (follow-up comments after the first)
+- `review/suppressed.go` — Parses the `Suppressed comments` section out of Copilot review bodies (`SubmittedReview` → `SuppressedComment`), splitting it into one entry per `**path:line**` header plus its bullet text and fenced snippet
 - `review/copilot.go` — `CopilotClassifier` implementation using the Copilot SDK. Sends all PR comments as structured JSON in a single request, receives classification+resolution results. Includes copilot CLI version check (>= 1.0.51 required)
 - `version/version.go` — Version constant for tagpr
 
@@ -31,6 +32,7 @@ The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL 
 - **CommentClassifier interface** in `review/review.go` enables testing with mock classifiers without requiring Copilot
 - **GitHub-resolved threads always win**: if `isResolved` is true on GitHub, the thread is treated as resolved regardless of Copilot's classification
 - **Category normalization**: unrecognized categories default to `informational`. `approval` and `informational` are always forced to resolved regardless of classifier output
+- **Suppressed comments are Copilot-only and latest-review-only**: the parser is gated on the `copilot-pull-request-reviewer` login. Copilot re-emits every still-relevant finding on each re-review, so entries found only in older reviews are forced resolved (reason: superseded) and excluded from the classifier payload
 - **Single Copilot call**: all comments are sent as one structured JSON payload to minimize API calls
 - PR identification delegates to `gh pr view` (supports PR number, URL, or current branch)
 
@@ -38,6 +40,7 @@ The data flow is: CLI argument → `gh pr view` (PR identification) → GraphQL 
 
 Tests use table-driven patterns with a `mockClassifier` that implements `CommentClassifier`, so tests run without Copilot. Key test files:
 - `review/review_test.go` — Analyze logic, resolution filtering, normalization
+- `review/suppressed_test.go` — Suppressed comment parsing against a real-world Copilot review body fixture, author gating, outdated marking
 - `review/copilot_test.go` — Copilot response parsing, version comparison
 - `output/markdown_test.go` — Markdown rendering, word wrapping
 

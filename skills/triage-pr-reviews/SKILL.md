@@ -13,16 +13,16 @@ compatibility: Requires gh CLI and gh-pr-reviews extension (gh extension install
 ## Phase 1: Fetch and Analyze
 
 1. Run `gh pr-reviews [arg] --json` to get unresolved review comments as JSON. If no argument is given, use the current branch's PR. Note: this command uses Copilot for classification and may take a while depending on the number of comments — use a longer timeout. Each JSON object contains:
-   - `comment_id` (int): REST API comment ID — usable for replying via `gh api`
+   - `comment_id` (int): REST API comment ID — usable for replying via `gh api`. `0` for `type: "suppressed"`
    - `thread_id` (string, only for `type: "thread"`): inline review thread ID
-   - `type`: `"thread"` (inline review) or `"comment"` (PR-level)
+   - `type`: `"thread"` (inline review), `"comment"` (PR-level), or `"suppressed"` (a finding Copilot listed in its review summary instead of posting inline)
    - `author`, `body`, `url`: comment metadata
-   - `commit_id`, `path`, `line`, `diff_hunk` (only for `type: "thread"`): file location and diff context
+   - `path`, `line`, `diff_hunk` (for `type: "thread"` and `type: "suppressed"`): file location and code context. `commit_id` is only present for `type: "thread"`
    - `category`: one of `suggestion`, `nitpick`, `issue`, `question`, `approval`, `informational`
    - `resolved` (bool), `reason` (string): resolution status and rationale
    - `replies` (array, optional, only for `type: "thread"` with multiple comments): follow-up comments in the thread, each with `author`, `body`, `created_at`, `url`
 2. Check if PR metadata (number, title, url) is already available from conversation context. If not (e.g., when a PR number/URL is explicitly passed as argument), run `gh pr view [arg] --json number,title,url` to get it.
-3. For `type: "thread"` comments, use `path`, `line`, and `diff_hunk` from the JSON response to identify the exact file location. For `type: "comment"` (PR-level), there is no file location.
+3. For `type: "thread"` and `type: "suppressed"` comments, use `path`, `line`, and `diff_hunk` from the JSON response to identify the exact file location. For `type: "comment"` (PR-level), there is no file location. Note that a `suppressed` comment's `line` refers to the review's head commit, so verify the location against the current file content before acting on it.
 4. Check code context for each comment. Leverage any existing conversation context first. Only fetch additional context via `gh pr diff` or file reads when necessary.
 5. Evaluate each comment against the code context. When a thread has `replies`, read the full conversation to understand whether the concern has already been discussed or partially addressed. Classify as **Agree**, **Partially Agree**, or **Disagree** with a rationale and suggested action.
 
@@ -74,6 +74,7 @@ For each comment, in order:
      2. **Fix & comment** — Make the code change and post a PR-level comment
      3. **Comment only** — Post a PR-level comment on GitHub
      4. **Skip** — Move on without taking action
+   - For `type: "suppressed"`, offer the same choices as `type: "comment"`. There is no thread to reply to or resolve, so replying means posting a PR-level comment.
    - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
 
 3. **Execute the chosen action** — code fixes and commits are applied immediately during the walkthrough. **GitHub API actions (reply, comment, resolve) are deferred** to Phase 4 (ideally after pushing). During this phase, confirm the reply/comment content with the user and queue it for later execution. When an action includes a code fix, record the commit hash so it can be referenced in the queued reply/comment.
@@ -147,6 +148,6 @@ Pending GitHub actions: <n> replies, <n> comments, <n> resolves
 - When the user selects a "Fix" action, this is an implicit request to commit. Draft a commit message, confirm it with the user, and commit. Do NOT push unless explicitly confirmed in Phase 4.
 - When fixing code, make minimal changes that address the review comment.
 - When suggesting reply drafts, keep them concise and professional.
-- When drafting a PR-level comment for `type: "comment"`, always include a link to the original comment (`url` from JSON) at the beginning of the reply body (e.g., `> Re: <url>\n\n<reply body>`). PR-level comments have no threading, so without a link readers cannot tell which comment the reply addresses.
+- When drafting a PR-level comment for `type: "comment"` or `type: "suppressed"`, always include a link to the original comment (`url` from JSON) at the beginning of the reply body (e.g., `> Re: <url>\n\n<reply body>`). PR-level comments have no threading, so without a link readers cannot tell which comment the reply addresses. For `type: "suppressed"`, also mention `path:line` since the review URL only points at the review as a whole.
 - If code context is unclear, search the codebase to verify before making a judgment.
 - Prefer `gh` commands for GitHub data.
