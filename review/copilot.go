@@ -36,12 +36,15 @@ For each comment or thread, determine:
 
 3. **reason**: Brief explanation of your classification and resolution decision. When a thread has multiple comments, reference the relevant reply that influenced your decision.
 
-You will receive a JSON object with "threads" (inline review threads) and "pr_comments" (top-level PR comments).
+You will receive a JSON object with "threads" (inline review threads), "pr_comments" (top-level PR comments), and "suppressed_comments" (findings the reviewer listed in its review summary instead of posting inline).
+
+Entries in "suppressed_comments" have no thread, so there are no replies to read. Classify them from the comment body and the attached "snippet" alone, and set is_resolved to false unless the body itself makes clear the concern no longer applies.
 
 Return a JSON object (no markdown fences) with the same structure, adding category, is_resolved, and reason fields:
 {
   "threads": [{"thread_id": "...", "category": "...", "is_resolved": true/false, "reason": "..."}],
-  "pr_comments": [{"id": "...", "category": "...", "is_resolved": true/false, "reason": "..."}]
+  "pr_comments": [{"id": "...", "category": "...", "is_resolved": true/false, "reason": "..."}],
+  "suppressed_comments": [{"id": "...", "category": "...", "is_resolved": true/false, "reason": "..."}]
 }
 
 Return ONLY valid JSON. Do not wrap in markdown code fences.`

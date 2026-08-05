@@ -157,6 +157,53 @@ func TestRenderMarkdownMixedTypes(t *testing.T) {
 	}
 }
 
+func TestRenderMarkdownSuppressed(t *testing.T) {
+	threadLine := 10
+	suppressedLine := 42
+	results := []review.UnresolvedComment{
+		{
+			ThreadID: "t1",
+			Type:     "thread",
+			Path:     "lib/utils.go",
+			Line:     &threadLine,
+			Author:   "alice",
+			Body:     "Thread comment",
+			URL:      "https://github.com/example/1",
+			Category: "nitpick",
+		},
+		{
+			Type:     "suppressed",
+			Path:     "lib/utils.go",
+			Line:     &suppressedLine,
+			Author:   "copilot-pull-request-reviewer",
+			Body:     "Suppressed finding",
+			URL:      "https://github.com/example/pull/1#pullrequestreview-1",
+			Category: "issue",
+		},
+	}
+
+	var buf bytes.Buffer
+	RenderMarkdown(&buf, results, newTestOutput(), 80)
+	out := buf.String()
+
+	// Suppressed comments share the file group with inline threads on the same path.
+	if n := strings.Count(out, "## lib/utils.go"); n != 1 {
+		t.Errorf("expected 1 file path header, got %d", n)
+	}
+	if strings.Contains(out, "## PR Comments") {
+		t.Error("suppressed comments must not be rendered under PR Comments")
+	}
+	if !strings.Contains(out, "[suppressed]") {
+		t.Error("missing [suppressed] marker")
+	}
+	if strings.Count(out, "[suppressed]") != 1 {
+		t.Error("the [suppressed] marker must only be applied to suppressed comments")
+	}
+	if !strings.Contains(out, "L42") {
+		t.Error("missing suppressed comment line number")
+	}
+}
+
 func TestRenderMarkdownResolvedStatus(t *testing.T) {
 	results := []review.UnresolvedComment{
 		{

@@ -324,7 +324,12 @@ func TestBuildClassifyInput(t *testing.T) {
 		},
 	}
 
-	input := buildClassifyInput(data)
+	suppressed := []SuppressedComment{
+		{ID: "S1", Path: "main.go", Line: &line, Body: "Missing default case", Author: "copilot-pull-request-reviewer", CreatedAt: now},
+		{ID: "S2", Path: "main.go", Body: "Stale", Author: "copilot-pull-request-reviewer", CreatedAt: now, IsOutdated: true},
+	}
+
+	input := buildClassifyInput(data, suppressed)
 
 	if len(input.Threads) != 1 {
 		t.Fatalf("expected 1 thread, got %d", len(input.Threads))
@@ -344,5 +349,13 @@ func TestBuildClassifyInput(t *testing.T) {
 	}
 	if input.PRComments[0].ID != "PC1" {
 		t.Errorf("expected PR comment ID PC1, got %s", input.PRComments[0].ID)
+	}
+
+	// Outdated suppressed comments are forced resolved, so they are not classified.
+	if len(input.Suppressed) != 1 {
+		t.Fatalf("expected 1 suppressed comment, got %d", len(input.Suppressed))
+	}
+	if input.Suppressed[0].ID != "S1" {
+		t.Errorf("expected suppressed comment ID S1, got %s", input.Suppressed[0].ID)
 	}
 }
