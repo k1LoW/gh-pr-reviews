@@ -235,6 +235,10 @@ func normalizeResolved(category string, resolved bool) bool {
 // review is reported as resolved.
 const supersededReason = "not listed in the latest Copilot review, so it is superseded"
 
+// unclassifiedReason explains why a suppressed comment the classifier did not
+// return a result for is reported as unresolved.
+const unclassifiedReason = "the classifier returned no result for this comment, so it is reported as unresolved"
+
 func buildResults(data *Data, suppressed []SuppressedComment, output *ClassifyOutput, showAll bool) []UnresolvedComment {
 	results := []UnresolvedComment{}
 
@@ -323,7 +327,11 @@ func buildResults(data *Data, suppressed []SuppressedComment, output *ClassifyOu
 			reason = classified.Reason
 			resolved = normalizeResolved(category, classified.IsResolved)
 		default:
-			resolved = normalizeResolved(category, false)
+			// Threads and PR comments fall back to resolved here, but a suppressed
+			// comment has no GitHub-side resolution state to cross-check against.
+			// Hiding it on a missing classification would discard the only copy of
+			// a finding that exists nowhere else in the API.
+			reason = unclassifiedReason
 		}
 
 		if !showAll && resolved {

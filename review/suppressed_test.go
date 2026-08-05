@@ -207,6 +207,31 @@ func TestExtractSuppressedCommentsMarksOlderReviewsOutdated(t *testing.T) {
 	}
 }
 
+func TestAnalyzeUnclassifiedSuppressedStaysUnresolved(t *testing.T) {
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	data := &Data{
+		Reviews: []SubmittedReview{
+			{ID: "R1", Author: "copilot-pull-request-reviewer", SubmittedAt: now, Body: "### Suppressed comments (1)\n\n**main.go:10**\n* Missing default case.\n"},
+		},
+	}
+	// The classifier returned valid JSON but omitted the suppressed entry.
+	mock := &mockClassifier{output: &ClassifyOutput{}}
+
+	results, err := Analyze(context.Background(), data, mock, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected the unclassified suppressed comment to be reported, got %d results", len(results))
+	}
+	if results[0].Resolved {
+		t.Error("expected an unclassified suppressed comment to stay unresolved")
+	}
+	if results[0].Reason != unclassifiedReason {
+		t.Errorf("unexpected reason: %q", results[0].Reason)
+	}
+}
+
 func TestAnalyzeSuppressedComments(t *testing.T) {
 	older := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	newer := older.Add(time.Hour)
