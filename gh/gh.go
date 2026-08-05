@@ -79,6 +79,15 @@ type prCommentsQuery struct {
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
+// submittedReviewStates excludes PENDING so unsubmitted drafts never reach the
+// suppressed comment extraction.
+var submittedReviewStates = []githubv4.PullRequestReviewState{
+	githubv4.PullRequestReviewStateApproved,
+	githubv4.PullRequestReviewStateChangesRequested,
+	githubv4.PullRequestReviewStateCommented,
+	githubv4.PullRequestReviewStateDismissed,
+}
+
 type reviewsQuery struct {
 	Repository struct {
 		PullRequest struct {
@@ -94,7 +103,7 @@ type reviewsQuery struct {
 					HasNextPage bool
 					EndCursor   githubv4.String
 				}
-			} `graphql:"reviews(first: 100, after: $reviewCursor)"`
+			} `graphql:"reviews(first: 100, after: $reviewCursor, states: $reviewStates)"`
 		} `graphql:"pullRequest(number: $number)"`
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
@@ -184,6 +193,7 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 			"repo":         githubv4.String(repo),
 			"number":       githubv4.Int(int32(number)), //nolint:gosec
 			"reviewCursor": reviewCursor,
+			"reviewStates": submittedReviewStates,
 		}
 		if err := c.v4.Query(ctx, &q, variables); err != nil {
 			return nil, fmt.Errorf("failed to fetch reviews: %w", err)
@@ -193,16 +203,19 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 			if node.Body == "" {
 				continue
 			}
-			r := review.SubmittedReview{
-				ID:     node.ID,
-				Body:   node.Body,
-				Author: node.Author.Login,
-				URL:    node.URL,
+			// A nil submittedAt means the review was never submitted. Recording it
+			// with a zero timestamp would make it sort as the oldest review, which
+			// decides which suppressed comments count as superseded.
+			if node.SubmittedAt == nil {
+				continue
 			}
-			if node.SubmittedAt != nil {
-				r.SubmittedAt = *node.SubmittedAt
-			}
-			data.Reviews = append(data.Reviews, r)
+			data.Reviews = append(data.Reviews, review.SubmittedReview{
+				ID:          node.ID,
+				Body:        node.Body,
+				Author:      node.Author.Login,
+				SubmittedAt: *node.SubmittedAt,
+				URL:         node.URL,
+			})
 		}
 		if !q.Repository.PullRequest.Reviews.PageInfo.HasNextPage {
 			break
