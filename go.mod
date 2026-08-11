@@ -4,7 +4,7 @@ go 1.25.7
 
 require (
 	github.com/briandowns/spinner v1.23.2
-	github.com/github/copilot-sdk/go v1.0.6
+	github.com/github/copilot-sdk/go v1.0.9
 	github.com/k1LoW/go-github-client/v79 v79.0.22
 	github.com/mattn/go-colorable v0.1.15
 	github.com/muesli/reflow v0.3.0
@@ -20,6 +20,7 @@ require (
 	github.com/cli/go-gh/v2 v2.12.2 // indirect
 	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/coder/websocket v1.8.15 // indirect
+	github.com/ebitengine/purego v0.10.1 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
