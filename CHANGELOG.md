@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.12.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.12.0...v0.12.1) - 2026-08-17
+
+### Fix bug 🐛
+- fix: paginate comments within a review thread by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/71
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.6 to 1.0.9 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/70
+
 ## [v0.12.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.11.2...v0.12.0) - 2026-08-05
 
 ### New Features 🎉
