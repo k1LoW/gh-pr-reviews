@@ -25,6 +25,27 @@ func New() (*Client, error) {
 	return &Client{v4: v4Client}, nil
 }
 
+type threadCommentNode struct {
+	ID         string
+	DatabaseID int64
+	Body       string
+	Author     struct{ Login string }
+	CreatedAt  time.Time
+	URL        string `graphql:"url"`
+	DiffHunk   string
+	Commit     struct {
+		Oid string
+	}
+}
+
+type threadCommentConnection struct {
+	Nodes    []threadCommentNode
+	PageInfo struct {
+		HasNextPage bool
+		EndCursor   githubv4.String
+	}
+}
+
 type reviewThreadsQuery struct {
 	Repository struct {
 		PullRequest struct {
@@ -35,20 +56,7 @@ type reviewThreadsQuery struct {
 					IsOutdated bool
 					Path       string
 					Line       *int
-					Comments   struct {
-						Nodes []struct {
-							ID         string
-							DatabaseId int64
-							Body       string
-							Author     struct{ Login string }
-							CreatedAt  time.Time
-							URL        string `graphql:"url"`
-							DiffHunk   string
-							Commit     struct {
-								Oid string
-							}
-						}
-					} `graphql:"comments(first: 100)"`
+					Comments   threadCommentConnection `graphql:"comments(first: 100)"`
 				}
 				PageInfo struct {
 					HasNextPage bool
@@ -57,6 +65,17 @@ type reviewThreadsQuery struct {
 			} `graphql:"reviewThreads(first: 100, after: $threadCursor)"`
 		} `graphql:"pullRequest(number: $number)"`
 	} `graphql:"repository(owner: $owner, name: $repo)"`
+}
+
+// threadCommentsQuery pages through a single thread's comments. The thread list
+// query can only ask for a fixed page of comments per thread, so threads with
+// more replies than that need to be topped up one by one via their node ID.
+type threadCommentsQuery struct {
+	Node struct {
+		PullRequestReviewThread struct {
+			Comments threadCommentConnection `graphql:"comments(first: 100, after: $commentCursor)"`
+		} `graphql:"... on PullRequestReviewThread"`
+	} `graphql:"node(id: $threadId)"`
 }
 
 type prCommentsQuery struct {
@@ -134,17 +153,15 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 				Path:       node.Path,
 				Line:       node.Line,
 			}
-			for _, c := range node.Comments.Nodes {
-				thread.Comments = append(thread.Comments, review.Comment{
-					ID:         c.ID,
-					DatabaseID: c.DatabaseId,
-					Body:       c.Body,
-					Author:     c.Author.Login,
-					CreatedAt:  c.CreatedAt,
-					URL:        c.URL,
-					DiffHunk:   c.DiffHunk,
-					CommitID:   c.Commit.Oid,
-				})
+			for _, cm := range node.Comments.Nodes {
+				thread.Comments = append(thread.Comments, toComment(cm))
+			}
+			if node.Comments.PageInfo.HasNextPage {
+				rest, err := c.fetchRemainingThreadComments(ctx, node.ID, node.Comments.PageInfo.EndCursor)
+				if err != nil {
+					return nil, err
+				}
+				thread.Comments = append(thread.Comments, rest...)
 			}
 			data.Threads = append(data.Threads, thread)
 		}
@@ -225,4 +242,43 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, number in
 	}
 
 	return data, nil
+}
+
+// fetchRemainingThreadComments pages through the comments of a single review
+// thread, starting after cursor.
+func (c *Client) fetchRemainingThreadComments(ctx context.Context, threadID string, cursor githubv4.String) ([]review.Comment, error) {
+	var comments []review.Comment
+	commentCursor := &cursor
+	for {
+		var q threadCommentsQuery
+		variables := map[string]any{
+			"threadId":      githubv4.ID(threadID),
+			"commentCursor": commentCursor,
+		}
+		if err := c.v4.Query(ctx, &q, variables); err != nil {
+			return nil, fmt.Errorf("failed to fetch comments of review thread %s: %w", threadID, err)
+		}
+		conn := q.Node.PullRequestReviewThread.Comments
+		for _, cm := range conn.Nodes {
+			comments = append(comments, toComment(cm))
+		}
+		if !conn.PageInfo.HasNextPage {
+			return comments, nil
+		}
+		next := conn.PageInfo.EndCursor
+		commentCursor = &next
+	}
+}
+
+func toComment(n threadCommentNode) review.Comment {
+	return review.Comment{
+		ID:         n.ID,
+		DatabaseID: n.DatabaseID,
+		Body:       n.Body,
+		Author:     n.Author.Login,
+		CreatedAt:  n.CreatedAt,
+		URL:        n.URL,
+		DiffHunk:   n.DiffHunk,
+		CommitID:   n.Commit.Oid,
+	}
 }
