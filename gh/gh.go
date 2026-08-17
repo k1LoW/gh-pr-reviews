@@ -27,7 +27,7 @@ func New() (*Client, error) {
 
 type threadCommentNode struct {
 	ID         string
-	DatabaseId int64
+	DatabaseID int64
 	Body       string
 	Author     struct{ Login string }
 	CreatedAt  time.Time
@@ -273,7 +273,7 @@ func (c *Client) fetchRemainingThreadComments(ctx context.Context, threadID stri
 func toComment(n threadCommentNode) review.Comment {
 	return review.Comment{
 		ID:         n.ID,
-		DatabaseID: n.DatabaseId,
+		DatabaseID: n.DatabaseID,
 		Body:       n.Body,
 		Author:     n.Author.Login,
 		CreatedAt:  n.CreatedAt,
