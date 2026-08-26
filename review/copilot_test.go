@@ -1,8 +1,72 @@
 package review
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 )
+
+func TestSplitClassifyInput(t *testing.T) {
+	line := 10
+	input := &ClassifyInput{
+		Threads: []ClassifyInputThread{
+			{ThreadID: "T1", Comments: []ClassifyInputComment{{Body: strings.Repeat("a", 40)}}},
+			{ThreadID: "T2", Comments: []ClassifyInputComment{{Body: strings.Repeat("b", 40)}}},
+		},
+		PRComments: []ClassifyInputPRComment{{ID: "P1", Body: strings.Repeat("c", 40)}},
+		Suppressed: []ClassifyInputSuppressed{{ID: "S1", Path: "file.go", Line: &line, Body: strings.Repeat("d", 40)}},
+	}
+
+	chunks, err := splitClassifyInput(input, 250)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(chunks) < 2 {
+		t.Fatalf("expected input to be split, got %d chunk(s)", len(chunks))
+	}
+
+	var threadIDs, commentIDs, suppressedIDs []string
+	for _, chunk := range chunks {
+		encoded, err := json.Marshal(chunk)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(encoded) > 250 {
+			t.Errorf("chunk is %d bytes, want at most 250", len(encoded))
+		}
+		for _, thread := range chunk.Threads {
+			threadIDs = append(threadIDs, thread.ThreadID)
+		}
+		for _, comment := range chunk.PRComments {
+			commentIDs = append(commentIDs, comment.ID)
+		}
+		for _, comment := range chunk.Suppressed {
+			suppressedIDs = append(suppressedIDs, comment.ID)
+		}
+	}
+	if got, want := strings.Join(threadIDs, ","), "T1,T2"; got != want {
+		t.Errorf("thread IDs = %q, want %q", got, want)
+	}
+	if got, want := strings.Join(commentIDs, ","), "P1"; got != want {
+		t.Errorf("comment IDs = %q, want %q", got, want)
+	}
+	if got, want := strings.Join(suppressedIDs, ","), "S1"; got != want {
+		t.Errorf("suppressed IDs = %q, want %q", got, want)
+	}
+}
+
+func TestSplitClassifyInputRejectsOversizedEntry(t *testing.T) {
+	input := &ClassifyInput{
+		Threads: []ClassifyInputThread{{
+			ThreadID: "T1",
+			Comments: []ClassifyInputComment{{Body: strings.Repeat("a", 100)}},
+		}},
+	}
+
+	if _, err := splitClassifyInput(input, 50); err == nil {
+		t.Fatal("expected oversized entry error")
+	}
+}
 
 func TestParseClassifyOutput(t *testing.T) {
 	tests := []struct {
@@ -29,7 +93,7 @@ func TestParseClassifyOutput(t *testing.T) {
 		},
 		{
 			name: "markdown fenced JSON",
-			raw: "```json\n{\"threads\":[],\"pr_comments\":[{\"id\":\"PC1\",\"category\":\"question\",\"is_resolved\":true,\"reason\":\"answered\"}]}\n```",
+			raw:  "```json\n{\"threads\":[],\"pr_comments\":[{\"id\":\"PC1\",\"category\":\"question\",\"is_resolved\":true,\"reason\":\"answered\"}]}\n```",
 			check: func(t *testing.T, o *ClassifyOutput) {
 				t.Helper()
 				if len(o.PRComments) != 1 {
