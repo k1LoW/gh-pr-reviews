@@ -14,6 +14,11 @@ import (
 
 const minCopilotVersion = "1.0.51"
 
+// Keep enough room for the system prompt and the model's response. The SDK
+// prompt limit is model-dependent, so use a conservative serialized-input
+// limit and split larger requests into multiple calls.
+const maxClassifyInputBytes = 100 * 1024
+
 const systemPrompt = `You are a code review comment classifier. You analyze PR review comments and classify each one.
 
 IMPORTANT: Each thread contains a "comments" array listing the full conversation in chronological order. The first comment is the original review comment; subsequent comments are replies. You MUST read ALL comments in every thread before classifying. The conversation flow is critical for determining resolution status.
@@ -89,6 +94,111 @@ func NewCopilotClassifier(ctx context.Context, model string) (*CopilotClassifier
 
 // ClassifyAll sends all review data to Copilot and returns classification results.
 func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInput) (*ClassifyOutput, error) {
+	chunks, err := splitClassifyInput(input, maxClassifyInputBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	merged := &ClassifyOutput{}
+	for _, chunk := range chunks {
+		output, err := c.classifyChunk(ctx, chunk)
+		if err != nil {
+			return nil, err
+		}
+		merged.Threads = append(merged.Threads, output.Threads...)
+		merged.PRComments = append(merged.PRComments, output.PRComments...)
+		merged.Suppressed = append(merged.Suppressed, output.Suppressed...)
+	}
+
+	return merged, nil
+}
+
+// splitClassifyInput groups complete entries into requests below maxBytes.
+// A thread is kept intact so the model always sees its complete conversation.
+func splitClassifyInput(input *ClassifyInput, maxBytes int) ([]*ClassifyInput, error) {
+	if maxBytes <= 0 {
+		return nil, fmt.Errorf("classify input size limit must be positive")
+	}
+
+	chunks := make([]*ClassifyInput, 0, 1)
+	current := &ClassifyInput{}
+
+	flush := func() {
+		if len(current.Threads) == 0 && len(current.PRComments) == 0 && len(current.Suppressed) == 0 {
+			return
+		}
+		chunks = append(chunks, current)
+		current = &ClassifyInput{}
+	}
+
+	tryAdd := func(add func(*ClassifyInput)) error {
+		candidate := cloneClassifyInput(current)
+		add(candidate)
+		encoded, err := json.Marshal(candidate)
+		if err != nil {
+			return fmt.Errorf("failed to marshal classify input chunk: %w", err)
+		}
+		if len(encoded) > maxBytes {
+			if len(current.Threads) == 0 && len(current.PRComments) == 0 && len(current.Suppressed) == 0 {
+				return fmt.Errorf("a single review comment exceeds the classify input size limit of %d bytes", maxBytes)
+			}
+			flush()
+			candidate = cloneClassifyInput(current)
+			add(candidate)
+			encoded, err = json.Marshal(candidate)
+			if err != nil {
+				return fmt.Errorf("failed to marshal classify input chunk: %w", err)
+			}
+			if len(encoded) > maxBytes {
+				return fmt.Errorf("a single review comment exceeds the classify input size limit of %d bytes", maxBytes)
+			}
+		}
+		*current = *candidate
+		return nil
+	}
+
+	for _, thread := range input.Threads {
+		thread := thread
+		if err := tryAdd(func(chunk *ClassifyInput) { chunk.Threads = append(chunk.Threads, thread) }); err != nil {
+			return nil, err
+		}
+	}
+	for _, comment := range input.PRComments {
+		comment := comment
+		if err := tryAdd(func(chunk *ClassifyInput) { chunk.PRComments = append(chunk.PRComments, comment) }); err != nil {
+			return nil, err
+		}
+	}
+	for _, comment := range input.Suppressed {
+		comment := comment
+		if err := tryAdd(func(chunk *ClassifyInput) { chunk.Suppressed = append(chunk.Suppressed, comment) }); err != nil {
+			return nil, err
+		}
+	}
+	flush()
+
+	return chunks, nil
+}
+
+func cloneClassifyInput(input *ClassifyInput) *ClassifyInput {
+	return &ClassifyInput{
+		Threads:    append([]ClassifyInputThread(nil), input.Threads...),
+		PRComments: append([]ClassifyInputPRComment(nil), input.PRComments...),
+		Suppressed: append([]ClassifyInputSuppressed(nil), input.Suppressed...),
+	}
+}
+
+// Close shuts down the Copilot session and client.
+func (c *CopilotClassifier) Close() {
+	if c.session != nil {
+		c.session.Disconnect() //nolint:errcheck
+	}
+	if c.client != nil {
+		c.client.Stop() //nolint:errcheck
+	}
+}
+
+func (c *CopilotClassifier) classifyChunk(ctx context.Context, input *ClassifyInput) (*ClassifyOutput, error) {
 	inputJSON, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal classify input: %w", err)
@@ -142,16 +252,6 @@ func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInpu
 	}
 
 	return output, nil
-}
-
-// Close shuts down the Copilot session and client.
-func (c *CopilotClassifier) Close() {
-	if c.session != nil {
-		c.session.Disconnect() //nolint:errcheck
-	}
-	if c.client != nil {
-		c.client.Stop() //nolint:errcheck
-	}
 }
 
 func checkCopilotCLI() error {
