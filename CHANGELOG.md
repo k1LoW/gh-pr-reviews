@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.13.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.12.1...v0.13.0) - 2026-08-26
+
+### New Features 🎉
+- fix: split large classifier inputs by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/74
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.9 to 1.0.11 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/73
+
 ## [v0.12.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.12.0...v0.12.1) - 2026-08-17
 
 ### Fix bug 🐛
