@@ -113,62 +113,6 @@ func (c *CopilotClassifier) ClassifyAll(ctx context.Context, input *ClassifyInpu
 	return merged, nil
 }
 
-func (c *CopilotClassifier) classifyChunk(ctx context.Context, input *ClassifyInput) (*ClassifyOutput, error) {
-	inputJSON, err := json.Marshal(input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal classify input: %w", err)
-	}
-
-	var responseContent string
-	done := make(chan struct{})
-	var eventErr error
-
-	unsubscribe := c.session.On(func(event copilot.SessionEvent) {
-		switch event.Type() {
-		case copilot.SessionEventTypeAssistantMessage:
-			if d, ok := event.Data.(*copilot.AssistantMessageData); ok {
-				responseContent = d.Content
-			}
-		case copilot.SessionEventTypeSessionIdle:
-			close(done)
-		case copilot.SessionEventTypeSessionError:
-			if d, ok := event.Data.(*copilot.SessionErrorData); ok {
-				eventErr = fmt.Errorf("copilot error: %s", d.Message)
-			}
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
-		}
-	})
-	defer unsubscribe()
-
-	_, err = c.session.Send(ctx, copilot.MessageOptions{
-		Prompt: string(inputJSON),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to send message to copilot: %w", err)
-	}
-
-	select {
-	case <-done:
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
-
-	if eventErr != nil {
-		return nil, eventErr
-	}
-
-	output, err := parseClassifyOutput(responseContent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse copilot response: %w", err)
-	}
-
-	return output, nil
-}
-
 // splitClassifyInput groups complete entries into requests below maxBytes.
 // A thread is kept intact so the model always sees its complete conversation.
 func splitClassifyInput(input *ClassifyInput, maxBytes int) ([]*ClassifyInput, error) {
@@ -252,6 +196,62 @@ func (c *CopilotClassifier) Close() {
 	if c.client != nil {
 		c.client.Stop() //nolint:errcheck
 	}
+}
+
+func (c *CopilotClassifier) classifyChunk(ctx context.Context, input *ClassifyInput) (*ClassifyOutput, error) {
+	inputJSON, err := json.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal classify input: %w", err)
+	}
+
+	var responseContent string
+	done := make(chan struct{})
+	var eventErr error
+
+	unsubscribe := c.session.On(func(event copilot.SessionEvent) {
+		switch event.Type() {
+		case copilot.SessionEventTypeAssistantMessage:
+			if d, ok := event.Data.(*copilot.AssistantMessageData); ok {
+				responseContent = d.Content
+			}
+		case copilot.SessionEventTypeSessionIdle:
+			close(done)
+		case copilot.SessionEventTypeSessionError:
+			if d, ok := event.Data.(*copilot.SessionErrorData); ok {
+				eventErr = fmt.Errorf("copilot error: %s", d.Message)
+			}
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
+		}
+	})
+	defer unsubscribe()
+
+	_, err = c.session.Send(ctx, copilot.MessageOptions{
+		Prompt: string(inputJSON),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to send message to copilot: %w", err)
+	}
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	if eventErr != nil {
+		return nil, eventErr
+	}
+
+	output, err := parseClassifyOutput(responseContent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse copilot response: %w", err)
+	}
+
+	return output, nil
 }
 
 func checkCopilotCLI() error {
