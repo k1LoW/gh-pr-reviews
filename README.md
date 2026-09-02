@@ -126,7 +126,7 @@ Only `suggestion`, `nitpick`, `issue`, and `question` categories are evaluated f
 
 Resolution status is determined by combining GitHub's native thread resolution state with Copilot-based analysis:
 
-1. **GitHub-resolved threads** — If a review thread is marked as resolved on GitHub (via the "Resolve conversation" button), it is always treated as **resolved**, regardless of Copilot's analysis. PR-level comments have no GitHub resolution state, so this step only applies to inline review threads.
+1. **GitHub-resolved threads** — If a review thread is marked as resolved on GitHub (via the "Resolve conversation" button), it is always treated as **resolved**. Such threads are excluded from the Copilot request entirely, so they have no classified category. With `-a` they are reported as `informational` with the fixed reason `marked as resolved on GitHub`. PR-level comments have no GitHub resolution state, so this step only applies to inline review threads.
 2. **Copilot analysis** — For threads not resolved on GitHub and for PR-level comments, Copilot classifies the comment category and determines resolution. As part of this analysis, `approval` and `informational` categories are always treated as resolved. For `suggestion`, `nitpick`, `issue`, and `question` categories, Copilot examines follow-up comments for evidence that the feedback was addressed or the question was answered.
 
 ```mermaid
