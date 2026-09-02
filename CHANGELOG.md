@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.14.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.13.0...v0.14.0) - 2026-09-02
+
+### Breaking Changes 🛠
+- fix: exclude GitHub-resolved threads from the classifier input by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/78
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/k1LoW/go-github-client/v79 from 79.0.22 to 79.0.23 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/77
+- chore(deps): bump Songmu/tagpr from 1.20.1 to 1.20.2 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/76
+
 ## [v0.13.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.12.1...v0.13.0) - 2026-08-26
 
 ### New Features 🎉
