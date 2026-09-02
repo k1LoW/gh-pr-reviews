@@ -166,6 +166,25 @@ func TestAnalyzeGitHubResolvedOverrides(t *testing.T) {
 	if len(results) != 0 {
 		t.Errorf("expected 0 results (GitHub resolved overrides), got %d", len(results))
 	}
+
+	// With showAll=true, the thread is still reported, but as resolved on GitHub
+	// rather than with the classifier result.
+	results, err = Analyze(context.Background(), data, mock, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result with showAll, got %d", len(results))
+	}
+	if !results[0].Resolved {
+		t.Error("expected resolved to be true")
+	}
+	if results[0].Category != "informational" {
+		t.Errorf("expected category informational, got %s", results[0].Category)
+	}
+	if results[0].Reason != resolvedOnGitHubReason {
+		t.Errorf("expected reason %q, got %q", resolvedOnGitHubReason, results[0].Reason)
+	}
 }
 
 func TestAnalyzeUnclassifiedDefaultsToResolvedInformational(t *testing.T) {
@@ -318,6 +337,14 @@ func TestBuildClassifyInput(t *testing.T) {
 					{ID: "C1", Body: "Fix this", Author: "alice", CreatedAt: now},
 				},
 			},
+			{
+				ID:         "T2",
+				IsResolved: true,
+				Path:       "main.go",
+				Comments: []Comment{
+					{ID: "C2", Body: "Already handled", Author: "alice", CreatedAt: now},
+				},
+			},
 		},
 		PRComments: []Comment{
 			{ID: "PC1", Body: "Overall", Author: "bob", CreatedAt: now},
@@ -336,9 +363,6 @@ func TestBuildClassifyInput(t *testing.T) {
 	}
 	if input.Threads[0].ThreadID != "T1" {
 		t.Errorf("expected thread ID T1, got %s", input.Threads[0].ThreadID)
-	}
-	if input.Threads[0].IsResolvedOnGitHub {
-		t.Error("expected IsResolvedOnGitHub to be false")
 	}
 	if input.Threads[0].Type != "inline" {
 		t.Errorf("expected type inline, got %s", input.Threads[0].Type)

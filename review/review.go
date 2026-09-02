@@ -37,12 +37,11 @@ type Data struct {
 
 // ClassifyInputThread is a thread entry sent to the classifier.
 type ClassifyInputThread struct {
-	ThreadID           string                 `json:"thread_id"`
-	Type               string                 `json:"type"`
-	Path               string                 `json:"path,omitempty"`
-	Line               *int                   `json:"line,omitempty"`
-	IsResolvedOnGitHub bool                   `json:"is_resolved_on_github"`
-	Comments           []ClassifyInputComment `json:"comments"`
+	ThreadID string                 `json:"thread_id"`
+	Type     string                 `json:"type"`
+	Path     string                 `json:"path,omitempty"`
+	Line     *int                   `json:"line,omitempty"`
+	Comments []ClassifyInputComment `json:"comments"`
 }
 
 // ClassifyInputComment is a comment entry sent to the classifier.
@@ -163,12 +162,16 @@ func buildClassifyInput(data *Data, suppressed []SuppressedComment) *ClassifyInp
 	input := &ClassifyInput{}
 
 	for _, t := range data.Threads {
+		// Threads resolved on GitHub are forced resolved below, so classifying
+		// them would only inflate the single Copilot request.
+		if t.IsResolved {
+			continue
+		}
 		ct := ClassifyInputThread{
-			ThreadID:           t.ID,
-			Type:               "inline",
-			Path:               t.Path,
-			Line:               t.Line,
-			IsResolvedOnGitHub: t.IsResolved,
+			ThreadID: t.ID,
+			Type:     "inline",
+			Path:     t.Path,
+			Line:     t.Line,
 		}
 		for _, c := range t.Comments {
 			ct.Comments = append(ct.Comments, ClassifyInputComment{
@@ -235,6 +238,10 @@ func normalizeResolved(category string, resolved bool) bool {
 // review is reported as resolved.
 const supersededReason = "not listed in the latest Copilot review, so it is superseded"
 
+// resolvedOnGitHubReason explains why a thread resolved on GitHub is reported
+// as resolved without a classification.
+const resolvedOnGitHubReason = "marked as resolved on GitHub"
+
 // unclassifiedReason explains why a suppressed comment the classifier did not
 // return a result for is reported as unresolved.
 const unclassifiedReason = "the classifier returned no result for this comment, so it is reported as unresolved"
@@ -248,18 +255,18 @@ func buildResults(data *Data, suppressed []SuppressedComment, output *ClassifyOu
 	}
 
 	for _, t := range data.Threads {
-		classified, ok := threadMap[t.ID]
 		resolved := t.IsResolved
 		category := defaultCategory
 		reason := ""
-		classifiedResolved := false
-		if ok {
+		switch classified, ok := threadMap[t.ID]; {
+		case t.IsResolved:
+			reason = resolvedOnGitHubReason
+		case ok:
 			category = normalizeCategory(classified.Category)
 			reason = classified.Reason
-			classifiedResolved = classified.IsResolved
-		}
-		if !resolved {
-			resolved = normalizeResolved(category, classifiedResolved)
+			resolved = normalizeResolved(category, classified.IsResolved)
+		default:
+			resolved = normalizeResolved(category, false)
 		}
 
 		if !showAll && resolved {

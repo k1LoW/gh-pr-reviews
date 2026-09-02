@@ -36,7 +36,6 @@ For each comment or thread, determine:
    - For threads with multiple comments, you MUST analyze the ENTIRE conversation to determine resolution:
      - For "suggestion", "nitpick", and "issue": A reply from the PR author acknowledging the feedback (e.g., "fixed", "done", "updated", explaining the change, or providing a valid justification for the current approach) indicates resolution.
      - For "question": Any substantive reply that answers the question indicates resolution. This includes explanations, clarifications, or references to relevant context. A question that has received a meaningful answer MUST be marked as resolved.
-   - If is_resolved_on_github is true, always consider it resolved regardless of comment content.
    - Only set is_resolved to false when there is NO meaningful reply addressing the concern, or when there is an ongoing unresolved disagreement after the latest reply.
 
 3. **reason**: Brief explanation of your classification and resolution decision. When a thread has multiple comments, reference the relevant reply that influenced your decision.
