@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.14.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.14.0...v0.14.1) - 2026-09-09
+
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.11 to 1.0.13 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/80
+
 ## [v0.14.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.13.0...v0.14.0) - 2026-09-02
 
 ### Breaking Changes 🛠
