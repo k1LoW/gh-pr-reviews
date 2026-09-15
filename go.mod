@@ -1,6 +1,6 @@
 module github.com/k1LoW/gh-pr-reviews
 
-go 1.25.7
+go 1.26.0
 
 require (
 	github.com/briandowns/spinner v1.23.2
@@ -11,7 +11,7 @@ require (
 	github.com/muesli/termenv v0.16.0
 	github.com/shurcooL/githubv4 v0.0.0-20260209031235-2402fdf4a9ed
 	github.com/spf13/cobra v1.10.2
-	golang.org/x/term v0.45.0
+	golang.org/x/term v0.46.0
 )
 
 require (
@@ -43,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
