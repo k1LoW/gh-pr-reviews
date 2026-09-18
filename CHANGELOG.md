@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.14.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.14.0...v0.14.1) - 2026-09-18
+
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/github/copilot-sdk/go from 1.0.11 to 1.0.13 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/80
+- chore(deps): bump Songmu/tagpr from 1.20.2 to 1.20.3 in the dependencies group across 1 directory by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/81
+- chore(deps): bump golang.org/x/term from 0.45.0 to 0.46.0 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/83
+
 ## [v0.14.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.13.0...v0.14.0) - 2026-09-02
 
 ### Breaking Changes 🛠
