@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.15.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.14.1...v0.15.0) - 2026-10-08
+
+### New Features 🎉
+- feat: report Copilot "Previously missed" findings as suppressed comments by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/89
+### Dependency Updates ⬆️
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/88
+- chore(deps): bump the dependencies group with 2 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/87
+
 ## [v0.14.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.14.0...v0.14.1) - 2026-09-30
 
 ### Dependency Updates ⬆️
