@@ -289,3 +289,121 @@ func TestAnalyzeSuppressedComments(t *testing.T) {
 		t.Errorf("expected the older entry to be resolved as superseded, got resolved=%v reason=%q", all[1].Resolved, all[1].Reason)
 	}
 }
+
+// copilotOverviewV2Body mirrors the v2 Copilot review overview. "Resolved since
+// last review" lists inline threads and must be ignored, while each
+// "Previously missed" finding is its own nested <details> whose path carries
+// zero-width spaces after every slash.
+const copilotOverviewV2Body = "<!-- ccr-overview-v2 -->\n" +
+	"\n" +
+	"## Copilot review overview\n" +
+	"\n" +
+	"### 🔵 Needs a closer look\n" +
+	"\n" +
+	"**Findings:** None\n" +
+	"\n" +
+	"<details>\n" +
+	"<summary><strong>Resolved since last review (1)</strong></summary>\n" +
+	"\n" +
+	"- <picture><img src=\"high.png\" alt=\"High severity\"></picture> [Timed-out preparation leaves backend running](#discussion_r4205434705)\n" +
+	"</details>\n" +
+	"\n" +
+	"<details>\n" +
+	"<summary><strong>Previously missed (2)</strong></summary>\n" +
+	"\n" +
+	"In code that hasn't changed since last review\n" +
+	"\n" +
+	"<details>\n" +
+	"<summary><picture><source media=\"(prefers-color-scheme: dark)\" srcset=\"medium-dark.svg\"><img src=\"medium.png\" alt=\"Medium severity\"></picture> Use describeError to preserve actionable error descriptions</summary>\n" +
+	"\n" +
+	"`Sources/\u200bvo/\u200bTranslationWorker.swift:92`\n" +
+	"\n" +
+	"Use the repository's `describeError(_:)` helper here.\n" +
+	"\n" +
+	"This issue also appears on line 181 of the same file.\n" +
+	"</details>\n" +
+	"\n" +
+	"<details>\n" +
+	"<summary><picture><img src=\"low.png\" alt=\"Low severity\"></picture> Avoid colon as a sentence connector</summary>\n" +
+	"\n" +
+	"`README.md:35`\n" +
+	"\n" +
+	"The repository prose rule prohibits `:` as a sentence connector.\n" +
+	"</details>\n" +
+	"</details>\n" +
+	"\n" +
+	"<details>\n" +
+	"<summary><strong>What changed in this PR</strong></summary>\n" +
+	"\n" +
+	"`main.go:1`\n" +
+	"</details>\n"
+
+func TestParsePreviouslyMissedSection(t *testing.T) {
+	got := parsePreviouslyMissedSection(copilotOverviewV2Body)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(got))
+	}
+	if got[0].path != "Sources/vo/TranslationWorker.swift" {
+		t.Errorf("zero-width spaces not stripped from path: %q", got[0].path)
+	}
+	if got[0].line == nil || *got[0].line != 92 {
+		t.Errorf("unexpected line: %v", got[0].line)
+	}
+	if !strings.HasPrefix(got[0].body, "Use describeError to preserve actionable error descriptions\n\n") {
+		t.Errorf("title not leading the body: %q", got[0].body)
+	}
+	if strings.Contains(got[0].body, "<") {
+		t.Errorf("HTML leaked into body: %q", got[0].body)
+	}
+	if !strings.Contains(got[0].body, "also appears on line 181") {
+		t.Errorf("trailing paragraph dropped: %q", got[0].body)
+	}
+	if got[0].snippet != "" {
+		t.Errorf("expected no snippet, got %q", got[0].snippet)
+	}
+	if got[1].path != "README.md" || got[1].line == nil || *got[1].line != 35 {
+		t.Errorf("unexpected second entry location: %s:%v", got[1].path, got[1].line)
+	}
+
+	if got := parsePreviouslyMissedSection(copilotReviewBody); len(got) != 0 {
+		t.Errorf("expected no entries from a body without the section, got %d", len(got))
+	}
+}
+
+func TestExtractSuppressedCommentsPreviouslyMissed(t *testing.T) {
+	older := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	newer := older.Add(time.Hour)
+	other := "<details>\n<summary><strong>Previously missed (1)</strong></summary>\n\n" +
+		"<details>\n<summary>Unwrap Collate in isValue</summary>\n\n`sharedtx.go:316`\n\nBody.\n</details>\n</details>\n"
+	// Re-lists only the README.md finding from R_old.
+	newest := "<details>\n<summary><strong>Previously missed (1)</strong></summary>\n\n" +
+		"<details>\n<summary>Avoid colon</summary>\n\n`README.md:35`\n\nStill there.\n</details>\n</details>\n"
+	reviews := []SubmittedReview{
+		{ID: "R_old", Author: "copilot-pull-request-reviewer", SubmittedAt: older, Body: copilotOverviewV2Body},
+		// A later review without the same findings must not supersede them,
+		// because Copilot does not re-list previously missed findings.
+		{ID: "R_mid", Author: "copilot-pull-request-reviewer", SubmittedAt: older.Add(time.Minute), Body: other},
+		{ID: "R_new", Author: "copilot-pull-request-reviewer", SubmittedAt: newer, Body: newest},
+	}
+
+	got := ExtractSuppressedComments(reviews)
+	byID := map[string]SuppressedComment{}
+	for _, s := range got {
+		byID[s.ID] = s
+	}
+	if len(byID) != 4 {
+		t.Fatalf("expected 4 entries, got %d: %v", len(byID), byID)
+	}
+	if byID["R_old#previously-missed-0"].IsOutdated {
+		t.Error("expected a finding not re-listed later to stay active")
+	}
+	if byID["R_mid#previously-missed-0"].IsOutdated {
+		t.Error("expected the middle review's finding to stay active")
+	}
+	if s := byID["R_old#previously-missed-1"]; !s.IsOutdated || s.OutdatedReason != reportedAgainReason {
+		t.Errorf("expected the duplicate in the older review to be outdated, got %v %q", s.IsOutdated, s.OutdatedReason)
+	}
+	if byID["R_new#previously-missed-0"].IsOutdated {
+		t.Error("expected the newest occurrence to stay active")
+	}
+}

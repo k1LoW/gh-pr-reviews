@@ -238,6 +238,10 @@ func normalizeResolved(category string, resolved bool) bool {
 // review is reported as resolved.
 const supersededReason = "not listed in the latest Copilot review, so it is superseded"
 
+// reportedAgainReason explains why a "Previously missed" entry is reported as
+// resolved when a later Copilot review lists the same path and line again.
+const reportedAgainReason = "reported again at the same location in a later Copilot review"
+
 // resolvedOnGitHubReason explains why a thread resolved on GitHub is reported
 // as resolved without a classification.
 const resolvedOnGitHubReason = "marked as resolved on GitHub"
@@ -328,7 +332,7 @@ func buildResults(data *Data, suppressed []SuppressedComment, output *ClassifyOu
 		switch classified, ok := suppressedMap[s.ID]; {
 		case s.IsOutdated:
 			resolved = true
-			reason = supersededReason
+			reason = s.OutdatedReason
 		case ok:
 			category = normalizeCategory(classified.Category)
 			reason = classified.Reason

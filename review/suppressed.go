@@ -21,9 +21,10 @@ type SubmittedReview struct {
 	URL         string    `json:"url"`
 }
 
-// SuppressedComment represents one entry of the "Suppressed comments" section in
-// a Copilot review body. GitHub holds no review thread for these, so they carry
-// no resolution state and cannot be replied to or resolved.
+// SuppressedComment represents one finding Copilot listed in a review body
+// instead of posting inline, taken from either the "Suppressed comments" or the
+// "Previously missed" section. GitHub holds no review thread for these, so they
+// carry no resolution state and cannot be replied to or resolved.
 type SuppressedComment struct {
 	ID         string    `json:"id"`
 	Path       string    `json:"path"`
@@ -34,19 +35,27 @@ type SuppressedComment struct {
 	CreatedAt  time.Time `json:"created_at"`
 	URL        string    `json:"url"`
 	IsOutdated bool      `json:"is_outdated"`
+	// OutdatedReason explains why IsOutdated is set.
+	OutdatedReason string `json:"-"`
 }
 
-// ExtractSuppressedComments splits the "Suppressed comments" sections of Copilot
-// review bodies into individual comments.
+// ExtractSuppressedComments splits the "Suppressed comments" and "Previously
+// missed" sections of Copilot review bodies into individual comments.
 //
-// Copilot re-emits the full list of still-relevant findings on every re-review,
-// so only the newest review describes the current code. Entries from earlier
-// reviews are kept but flagged outdated rather than dropped, so that -a can
-// still surface them.
+// Copilot re-emits the full list of still-relevant suppressed findings on every
+// re-review, so only the newest review describes the current code. Suppressed
+// entries from earlier reviews are kept but flagged outdated rather than
+// dropped, so that -a can still surface them.
+//
+// "Previously missed" entries are per-review discoveries in code left unchanged
+// since the prior review, and Copilot does not re-list them each time, so the
+// newest-review rule would hide findings that were never addressed. Only exact
+// path:line duplicates across reviews are flagged outdated for them.
 func ExtractSuppressedComments(reviews []SubmittedReview) []SuppressedComment {
 	type parsedReview struct {
 		review  SubmittedReview
 		entries []suppressedEntry
+		missed  []suppressedEntry
 	}
 
 	var parsed []parsedReview
@@ -56,32 +65,75 @@ func ExtractSuppressedComments(reviews []SubmittedReview) []SuppressedComment {
 			continue
 		}
 		entries := parseSuppressedSection(r.Body)
-		if len(entries) == 0 {
+		missed := parsePreviouslyMissedSection(r.Body)
+		if len(entries) == 0 && len(missed) == 0 {
 			continue
 		}
-		if newest < 0 || r.SubmittedAt.After(parsed[newest].review.SubmittedAt) {
-			newest = len(parsed)
+		parsed = append(parsed, parsedReview{review: r, entries: entries, missed: missed})
+		if len(entries) > 0 && (newest < 0 || r.SubmittedAt.After(parsed[newest].review.SubmittedAt)) {
+			newest = len(parsed) - 1
 		}
-		parsed = append(parsed, parsedReview{review: r, entries: entries})
+	}
+
+	latestMissed := map[missedKey]time.Time{}
+	for _, p := range parsed {
+		for _, e := range p.missed {
+			k := missedLocation(e)
+			if t, ok := latestMissed[k]; !ok || p.review.SubmittedAt.After(t) {
+				latestMissed[k] = p.review.SubmittedAt
+			}
+		}
 	}
 
 	var out []SuppressedComment
 	for i, p := range parsed {
 		for j, e := range p.entries {
-			out = append(out, SuppressedComment{
-				ID:         fmt.Sprintf("%s#suppressed-%d", p.review.ID, j),
-				Path:       e.path,
-				Line:       e.line,
-				Body:       e.body,
-				Snippet:    e.snippet,
-				Author:     p.review.Author,
-				CreatedAt:  p.review.SubmittedAt,
-				URL:        p.review.URL,
-				IsOutdated: i != newest,
-			})
+			c := newSuppressedComment(p.review, e, fmt.Sprintf("%s#suppressed-%d", p.review.ID, j))
+			if i != newest {
+				c.IsOutdated = true
+				c.OutdatedReason = supersededReason
+			}
+			out = append(out, c)
+		}
+		seen := map[missedKey]bool{}
+		for j, e := range p.missed {
+			c := newSuppressedComment(p.review, e, fmt.Sprintf("%s#previously-missed-%d", p.review.ID, j))
+			k := missedLocation(e)
+			if seen[k] || p.review.SubmittedAt.Before(latestMissed[k]) {
+				c.IsOutdated = true
+				c.OutdatedReason = reportedAgainReason
+			}
+			seen[k] = true
+			out = append(out, c)
 		}
 	}
 	return out
+}
+
+func newSuppressedComment(r SubmittedReview, e suppressedEntry, id string) SuppressedComment {
+	return SuppressedComment{
+		ID:        id,
+		Path:      e.path,
+		Line:      e.line,
+		Body:      e.body,
+		Snippet:   e.snippet,
+		Author:    r.Author,
+		CreatedAt: r.SubmittedAt,
+		URL:       r.URL,
+	}
+}
+
+type missedKey struct {
+	path string
+	line int
+}
+
+func missedLocation(e suppressedEntry) missedKey {
+	k := missedKey{path: e.path}
+	if e.line != nil {
+		k.line = *e.line
+	}
+	return k
 }
 
 func isCopilotReviewer(login string) bool {
@@ -199,4 +251,112 @@ func stripBullet(lines []string) string {
 		}
 	}
 	return joined
+}
+
+var (
+	previouslyMissedSummaryRe = regexp.MustCompile(`(?i)<summary>\s*<strong>\s*(?:previously missed\b|\d+\s+previously missed\b)`)
+	missedLocationRe          = regexp.MustCompile("^`([^`]+):(\\d+)`$")
+	htmlTagRe                 = regexp.MustCompile(`<[^>]*>`)
+)
+
+// parsePreviouslyMissedSection reads the "Previously missed" block of the v2
+// Copilot review overview. Each finding is its own nested <details>, so the
+// section end is found by tracking nesting depth rather than stopping at the
+// first </details>.
+func parsePreviouslyMissedSection(body string) []suppressedEntry {
+	var (
+		entries []suppressedEntry
+		cur     *suppressedEntry
+		title   string
+		buf     []string
+		inFence bool
+		started bool
+		depth   int
+	)
+
+	flush := func() {
+		if cur == nil {
+			return
+		}
+		prose := strings.TrimSpace(strings.Join(buf, "\n"))
+		switch {
+		case title != "" && prose != "":
+			cur.body = title + "\n\n" + prose
+		case title != "":
+			cur.body = title
+		default:
+			cur.body = prose
+		}
+		if cur.path != "" && cur.body != "" {
+			entries = append(entries, *cur)
+		}
+		cur, title, buf = nil, "", nil
+	}
+
+	for _, raw := range strings.Split(body, "\n") {
+		line := strings.TrimRight(raw, "\r")
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			inFence = !inFence
+			if cur != nil {
+				buf = append(buf, line)
+			}
+			continue
+		}
+		if inFence {
+			if cur != nil {
+				buf = append(buf, line)
+			}
+			continue
+		}
+		if !started {
+			if previouslyMissedSummaryRe.MatchString(line) {
+				started = true
+				depth = 1
+			}
+			continue
+		}
+
+		if strings.HasPrefix(trimmed, "<details") {
+			depth++
+			if depth == 2 {
+				flush()
+				cur = &suppressedEntry{}
+			}
+			trimmed = strings.TrimSpace(trimmed[strings.Index(trimmed, ">")+1:])
+			if trimmed == "" {
+				continue
+			}
+		}
+		if strings.HasPrefix(trimmed, "</details>") {
+			if depth == 2 {
+				flush()
+			}
+			depth--
+			if depth <= 0 {
+				break
+			}
+			continue
+		}
+		if cur == nil {
+			continue
+		}
+		if strings.HasPrefix(trimmed, "<summary>") && title == "" {
+			title = strings.TrimSpace(htmlTagRe.ReplaceAllString(trimmed, ""))
+			continue
+		}
+		if cur.path == "" {
+			if m := missedLocationRe.FindStringSubmatch(trimmed); m != nil {
+				cur.path = strings.TrimSpace(strings.ReplaceAll(m[1], "\u200b", ""))
+				if n, err := strconv.Atoi(m[2]); err == nil {
+					cur.line = &n
+				}
+				continue
+			}
+		}
+		buf = append(buf, line)
+	}
+	flush()
+
+	return entries
 }
