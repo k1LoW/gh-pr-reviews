@@ -48,7 +48,7 @@ Use `--json` to get machine-readable JSON output:
 $ gh pr-reviews 123 --json
 ```
 
-There are three types: `thread` (inline review thread), `comment` (PR-level comment), and `suppressed` (a finding Copilot listed in its review summary instead of posting inline, see [Suppressed comments](#suppressed-comments)). `thread_id`, `commit_id`, and `replies` are only present for `thread` type. `path`, `line`, and `diff_hunk` are present for `thread` and `suppressed` types. `comment_id` is the REST API comment ID, which can be used for replying, and is `0` for `suppressed`. `replies` contains follow-up comments in a thread (omitted when empty).
+There are three types: `thread` (inline review thread), `comment` (PR-level comment), and `suppressed` (a finding Copilot listed in its review summary instead of posting inline, such as `Suppressed comments` or `Previously missed`, see [Suppressed comments](#suppressed-comments)). `thread_id`, `commit_id`, and `replies` are only present for `thread` type. `path`, `line`, and `diff_hunk` are present for `thread` and `suppressed` types. `comment_id` is the REST API comment ID, which can be used for replying, and is `0` for `suppressed`. `replies` contains follow-up comments in a thread (omitted when empty).
 
 ```json
 [
@@ -105,9 +105,13 @@ There are three types: `thread` (inline review thread), `comment` (PR-level comm
 
 GitHub Copilot does not post every finding as an inline review comment. Low-confidence ones are collapsed into a `Suppressed comments` section of the review summary body, where they are invisible to the review threads API and easy to miss.
 
-`gh pr-reviews` parses that section and reports each entry individually as `type: "suppressed"`, grouped under its file path just like an inline thread. These entries have no review thread on GitHub, so they cannot be replied to or resolved — `thread_id` is absent and `comment_id` is `0`. The `url` points at the review that contained them.
+Copilot also lists findings in code that has not changed since the previous review in a `Previously missed` section of the review summary, which is likewise invisible to the review threads API.
 
-Copilot re-emits the full list of still-relevant findings on every re-review, so only the newest review reflects the current code. Entries that appear only in older reviews are reported as resolved and are therefore hidden unless `-a` is given.
+`gh pr-reviews` parses both sections and reports each entry individually as `type: "suppressed"`, grouped under its file path just like an inline thread. These entries have no review thread on GitHub, so they cannot be replied to or resolved. `thread_id` is absent and `comment_id` is `0`. The `url` points at the review that contained them.
+
+Copilot re-emits the full list of still-relevant `Suppressed comments` on every re-review, so only the newest review reflects the current code. Suppressed entries that appear only in older reviews are reported as resolved and are therefore hidden unless `-a` is given.
+
+`Previously missed` entries are not re-listed on every re-review, so entries from all Copilot reviews are kept. When a later review lists the same `path:line` again, only the newest occurrence is kept and the older ones are reported as resolved.
 
 ### Comment Categories
 
