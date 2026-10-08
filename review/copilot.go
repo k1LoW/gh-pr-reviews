@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -61,12 +62,14 @@ type CopilotClassifier struct {
 
 // NewCopilotClassifier creates a new CopilotClassifier.
 func NewCopilotClassifier(ctx context.Context, model string) (*CopilotClassifier, error) {
-	if err := checkCopilotCLI(); err != nil {
+	cliPath, err := checkCopilotCLI()
+	if err != nil {
 		return nil, err
 	}
 
 	client := copilot.NewClient(&copilot.ClientOptions{
-		LogLevel: "error",
+		Connection: copilot.StdioConnection{Path: cliPath},
+		LogLevel:   "error",
 	})
 
 	if err := client.Start(ctx); err != nil {
@@ -253,22 +256,35 @@ func (c *CopilotClassifier) classifyChunk(ctx context.Context, input *ClassifyIn
 	return output, nil
 }
 
-func checkCopilotCLI() error {
-	out, err := exec.Command("copilot", "--version").Output()
+// checkCopilotCLI resolves the copilot CLI to launch and verifies its version.
+// The path is passed to the SDK explicitly because the SDK no longer falls back
+// to "copilot" in PATH and would otherwise require a runtime embedded with
+// cmd/bundler, which cannot be produced by the cross-compiling release build.
+func checkCopilotCLI() (string, error) {
+	cliPath := os.Getenv("COPILOT_CLI_PATH")
+	if cliPath == "" {
+		p, err := exec.LookPath("copilot")
+		if err != nil {
+			return "", fmt.Errorf("copilot CLI not found. Please install GitHub Copilot CLI >= %s", minCopilotVersion)
+		}
+		cliPath = p
+	}
+
+	out, err := exec.Command(cliPath, "--version").Output() //nolint:gosec // cliPath comes from PATH lookup or the user's own COPILOT_CLI_PATH
 	if err != nil {
-		return fmt.Errorf("copilot CLI not found. Please install GitHub Copilot CLI >= %s", minCopilotVersion)
+		return "", fmt.Errorf("failed to run %s --version: %w", cliPath, err)
 	}
 
 	version := parseCopilotVersion(string(out))
 	if version == "" {
-		return fmt.Errorf("could not parse copilot CLI version from: %s", strings.TrimSpace(string(out)))
+		return "", fmt.Errorf("could not parse copilot CLI version from: %s", strings.TrimSpace(string(out)))
 	}
 
 	if compareVersions(version, minCopilotVersion) < 0 {
-		return fmt.Errorf("copilot CLI version %s is too old. Please update to >= %s (run: copilot update)", version, minCopilotVersion)
+		return "", fmt.Errorf("copilot CLI version %s is too old. Please update to >= %s (run: copilot update)", version, minCopilotVersion)
 	}
 
-	return nil
+	return cliPath, nil
 }
 
 var versionRegexp = regexp.MustCompile(`(\d+\.\d+\.\d+)`)
@@ -324,12 +340,14 @@ func parseClassifyOutput(raw string) (*ClassifyOutput, error) {
 
 // ListCopilotModels returns available model IDs from the Copilot SDK.
 func ListCopilotModels(ctx context.Context) ([]string, error) {
-	if err := checkCopilotCLI(); err != nil {
+	cliPath, err := checkCopilotCLI()
+	if err != nil {
 		return nil, err
 	}
 
 	client := copilot.NewClient(&copilot.ClientOptions{
-		LogLevel: "error",
+		Connection: copilot.StdioConnection{Path: cliPath},
+		LogLevel:   "error",
 	})
 
 	if err := client.Start(ctx); err != nil {
