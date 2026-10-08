@@ -2,6 +2,7 @@ package review
 
 import (
 	"encoding/json"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -178,6 +179,23 @@ func TestCompareVersions(t *testing.T) {
 		got := compareVersions(tt.a, tt.b)
 		if got != tt.want {
 			t.Errorf("compareVersions(%q, %q) = %d, want %d", tt.a, tt.b, got, tt.want)
+		}
+	}
+}
+
+func TestCopilotVersionCommand(t *testing.T) {
+	tests := []struct {
+		cliPath  string
+		wantName string
+		wantArgs []string
+	}{
+		{"/opt/homebrew/bin/copilot", "/opt/homebrew/bin/copilot", []string{"--version"}},
+		{"/path/to/runtime/index.js", "node", []string{"/path/to/runtime/index.js", "--version"}},
+	}
+	for _, tt := range tests {
+		name, args := copilotVersionCommand(tt.cliPath)
+		if name != tt.wantName || !slices.Equal(args, tt.wantArgs) {
+			t.Errorf("copilotVersionCommand(%q) = %q %q, want %q %q", tt.cliPath, name, args, tt.wantName, tt.wantArgs)
 		}
 	}
 }
