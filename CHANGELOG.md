@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.15.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.15.0...v0.15.1) - 2026-10-08
+
+### Fix bug 🐛
+- fix: launch the copilot CLI found in PATH explicitly by @k1LoW in https://github.com/k1LoW/gh-pr-reviews/pull/91
+
 ## [v0.15.0](https://github.com/k1LoW/gh-pr-reviews/compare/v0.14.1...v0.15.0) - 2026-10-08
 
 ### New Features 🎉
