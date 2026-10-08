@@ -95,15 +95,14 @@ func ExtractSuppressedComments(reviews []SubmittedReview) []SuppressedComment {
 			}
 			out = append(out, c)
 		}
-		seen := map[missedKey]bool{}
 		for j, e := range p.missed {
 			c := newSuppressedComment(p.review, e, fmt.Sprintf("%s#previously-missed-%d", p.review.ID, j))
-			k := missedLocation(e)
-			if seen[k] || p.review.SubmittedAt.Before(latestMissed[k]) {
+			// Within one review the same location can hold distinct findings,
+			// so only a later review counts as re-reporting it.
+			if p.review.SubmittedAt.Before(latestMissed[missedLocation(e)]) {
 				c.IsOutdated = true
 				c.OutdatedReason = reportedAgainReason
 			}
-			seen[k] = true
 			out = append(out, c)
 		}
 	}

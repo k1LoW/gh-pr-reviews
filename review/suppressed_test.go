@@ -407,3 +407,22 @@ func TestExtractSuppressedCommentsPreviouslyMissed(t *testing.T) {
 		t.Error("expected the newest occurrence to stay active")
 	}
 }
+
+func TestExtractSuppressedCommentsPreviouslyMissedSameLocationInOneReview(t *testing.T) {
+	body := "<details>\n<summary><strong>Previously missed (2)</strong></summary>\n\n" +
+		"<details>\n<summary>First finding</summary>\n\n`main.go:10`\n\nOne.\n</details>\n\n" +
+		"<details>\n<summary>Second finding</summary>\n\n`main.go:10`\n\nTwo.\n</details>\n</details>\n"
+	reviews := []SubmittedReview{
+		{ID: "R1", Author: "copilot-pull-request-reviewer", SubmittedAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Body: body},
+	}
+
+	got := ExtractSuppressedComments(reviews)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(got))
+	}
+	for _, s := range got {
+		if s.IsOutdated {
+			t.Errorf("expected distinct findings at the same location in one review to stay active, got %s outdated", s.ID)
+		}
+	}
+}
