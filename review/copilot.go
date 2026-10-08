@@ -42,7 +42,7 @@ For each comment or thread, determine:
 
 You will receive a JSON object with "threads" (inline review threads), "pr_comments" (top-level PR comments), and "suppressed_comments" (findings the reviewer listed in its review summary instead of posting inline).
 
-Entries in "suppressed_comments" have no thread, so there are no replies to read. Classify them from the comment body and the attached "snippet" alone, and set is_resolved to false unless the body itself makes clear the concern no longer applies.
+Entries in "suppressed_comments" have no thread, so there are no replies to read. Classify them from the comment body and the attached "snippet" (when present) alone, and set is_resolved to false unless the body itself makes clear the concern no longer applies.
 
 Return a JSON object (no markdown fences) with the same structure, adding category, is_resolved, and reason fields:
 {
