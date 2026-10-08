@@ -270,7 +270,8 @@ func checkCopilotCLI() (string, error) {
 		cliPath = p
 	}
 
-	out, err := exec.Command(cliPath, "--version").Output() //nolint:gosec // cliPath comes from PATH lookup or the user's own COPILOT_CLI_PATH
+	name, args := copilotVersionCommand(cliPath)
+	out, err := exec.Command(name, args...).Output() //nolint:gosec // cliPath comes from PATH lookup or the user's own COPILOT_CLI_PATH
 	if err != nil {
 		return "", fmt.Errorf("failed to run %s --version: %w", cliPath, err)
 	}
@@ -285,6 +286,15 @@ func checkCopilotCLI() (string, error) {
 	}
 
 	return cliPath, nil
+}
+
+// copilotVersionCommand mirrors how the SDK launches cliPath, which runs a .js
+// entry point through node instead of relying on a shebang that Windows ignores.
+func copilotVersionCommand(cliPath string) (string, []string) {
+	if strings.HasSuffix(cliPath, ".js") {
+		return "node", []string{cliPath, "--version"}
+	}
+	return cliPath, []string{"--version"}
 }
 
 var versionRegexp = regexp.MustCompile(`(\d+\.\d+\.\d+)`)
