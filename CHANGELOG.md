@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.15.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.15.1...v0.15.2) - 2026-11-05
+
+### Dependency Updates ⬆️
+- chore(deps): bump github.com/klauspost/compress from 1.18.3 to 1.18.7 by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/95
+- chore(deps): bump the dependencies group with 3 updates by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/94
+- chore(deps): bump Songmu/tagpr from 1.21.1 to 1.21.2 in the dependencies group by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/93
+
 ## [v0.15.1](https://github.com/k1LoW/gh-pr-reviews/compare/v0.15.0...v0.15.1) - 2026-10-08
 
 ### Fix bug 🐛
