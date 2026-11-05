@@ -76,6 +76,7 @@ For each comment, in order:
      4. **Skip** — Move on without taking action
    - For `type: "suppressed"`, offer the same choices as `type: "comment"`. There is no thread to reply to or resolve, so replying means posting a PR-level comment.
    - The user may select by number, name, or provide **custom instructions** (e.g., "fix but also refactor the surrounding function", "reply with a question asking for clarification", etc.)
+   - When the comment author is a human (not a bot such as `copilot-pull-request-reviewer` or a login ending in `[bot]`) and the suggested action involves a code change, mark **Fix in code** as the recommended choice.
 
 3. **Execute the chosen action** — code fixes and commits are applied immediately during the walkthrough. **GitHub API actions (reply, comment, resolve) are deferred** to Phase 4 (ideally after pushing). During this phase, confirm the reply/comment content with the user and queue it for later execution. When an action includes a code fix, record the commit hash so it can be referenced in the queued reply/comment.
    - **Fix in code**: Make the code change, draft a commit message following the repository's commit message conventions (check `git log` for style), confirm it with the user, and commit.
@@ -148,6 +149,7 @@ Pending GitHub actions: <n> replies, <n> comments, <n> resolves
 - When the user selects a "Fix" action, this is an implicit request to commit. Draft a commit message, confirm it with the user, and commit. Do NOT push unless explicitly confirmed in Phase 4.
 - When fixing code, make minimal changes that address the review comment.
 - When suggesting reply drafts, keep them concise and professional.
+- When the action includes a code fix and the comment author is a human, suggest just `Fixed in <commit hash>.` as the default reply draft.
 - When drafting a PR-level comment for `type: "comment"` or `type: "suppressed"`, always include a link to the original comment (`url` from JSON) at the beginning of the reply body (e.g., `> Re: <url>\n\n<reply body>`). PR-level comments have no threading, so without a link readers cannot tell which comment the reply addresses. For `type: "suppressed"`, also mention `path:line` since the review URL only points at the review as a whole.
 - If code context is unclear, search the codebase to verify before making a judgment.
 - Prefer `gh` commands for GitHub data.
