@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.15.3](https://github.com/k1LoW/gh-pr-reviews/compare/v0.15.2...v0.15.3) - 2026-11-17
+
+### Dependency Updates ⬆️
+- chore(deps): bump go.opentelemetry.io/otel/trace from 1.35.0 to 1.47.0 by @dependabot[bot] in https://github.com/k1LoW/gh-pr-reviews/pull/99
+
 ## [v0.15.2](https://github.com/k1LoW/gh-pr-reviews/compare/v0.15.1...v0.15.2) - 2026-11-05
 
 ### Dependency Updates ⬆️
